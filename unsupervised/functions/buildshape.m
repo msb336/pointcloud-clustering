@@ -23,13 +23,17 @@ switch shape
         [x,y,z] = sphere(ceil(10/definition));
         p = unique([x(:), y(:), z(:)],'rows');
         hol = p;
+    case 'plane'
+        %% oscillating Plane
+        [x,y] = meshgrid(-10:definition:10, -10:definition:10);
+        z = sin(x(:)) + cos(y(:));
+        hol = [x(:) y(:) z(:)];
     case 'read'
         hol = csvread('bridge.csv');
         noise_level = 0;
 end
 
 %%
-
 hol = hol + noise_level*randn(size(hol));
 end
 

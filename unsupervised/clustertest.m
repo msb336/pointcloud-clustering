@@ -1,19 +1,23 @@
 %%
 clearvars;close all;clc
-addpath functions data
+addpath functions
 %%
  j = 1;
  groups = [];
  cloud = [];
+ noise = 0.01;
 for i = 1:10
-h1 = buildshape('l', 0.3, 0) + [(rand-0.5)*20 (rand-0.5)*20 (rand-0.5)*20];
-h2 = buildshape('sphere', 0.5, 0)+[(rand-0.5)*20 (rand-0.5)*20 (rand-0.5)*20];
+h1 = buildshape('l', 0.3, noise) + [(rand-0.5)*20 (rand-0.5)*20 (rand)*5];
+h2 = buildshape('sphere', 0.5, noise)+[(rand-0.5)*20 (rand-0.5)*20 (rand)*5];
 groups = [groups; j*ones(length(h1),1); (j+1)*ones(length(h2),1)];
 j = j + 2;
 cloud = [cloud; h1;h2];
 end
+plane = buildshape('plane', 0.3, noise);
+groups = [groups; j*ones(length(plane),1)];
+cloud = [cloud;plane];
 %%
-num = 20;
+num = j;
 res = table;
 %% Agglomerative Cluster
 tic
