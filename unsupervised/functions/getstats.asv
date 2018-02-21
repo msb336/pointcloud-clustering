@@ -1,0 +1,15 @@
+function [acc, prec, rec, f1] = getstats(cluster,ground)
+%UNTITLED2 Summary of this function goes here
+%   Detailed explanation goes here
+for i = 1:max(ground)
+    test = cluster(ground == i);
+    l = length(test);
+    [m,tp] = mode(test);
+    fp = sum(cluster(l+1:end) == m);
+    fn = l-tp;
+    tn = length(cluster) - (tp+fp+fn);
+    acc(i) = (tp+tn)/(tp+fp+fn+tn);
+    rec(i) = tp/(tp+fn);
+    prec(i) = tp/(tp+fp);
+end
+
