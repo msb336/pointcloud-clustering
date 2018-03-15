@@ -4,3 +4,9 @@ unsupervised/data/segment.stl
 unsupervised/data/segment2.stl
 *.txt
 *.asv
+*.gz
+*.las
+*.laz
+*.ply
+*.tar
+*.conf
