@@ -5,7 +5,7 @@ addpath functions
  j = 1;
  groups = [];
  cloud = [];
- noise = 0.1;
+ noise = 0.0;
  figure;
  title('Ground Truth')
 for i = 1:10
@@ -18,7 +18,7 @@ j = j + 2;
 cloud = [cloud; h1;h2];
 end
 plane = buildshape('plane', 0.3, noise);
-plot3dvectors(plane);
+plot3dvectors(plane, '.');
 groups = [groups; j*ones(length(plane),1)];
 cloud = [cloud;plane];
 %%
