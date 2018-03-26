@@ -1,11 +1,11 @@
 %%
 clearvars;close all;clc
-addpath functions
+addpath functions data
 %%
  j = 1;
  groups = [];
  cloud = [];
- noise = 0.0;
+ noise = 0;
  figure;
  title('Ground Truth')
 for i = 1:10
@@ -18,15 +18,17 @@ j = j + 2;
 cloud = [cloud; h1;h2];
 end
 plane = buildshape('plane', 0.3, noise);
+cloud = [cloud; plane];
 plot3dvectors(plane, '.');
 groups = [groups; j*ones(length(plane),1)];
-cloud = [cloud;plane];
+
 %%
-num = j;
+num = 20;
 res = table;
 %% Agglomerative Cluster
 tic
 Z = linkage(cloud);
+
 c = cluster(Z, 'maxclust', num);
 t = toc;
 tit = sprintf('Agglomerative Cluster. Time: %d', t);
@@ -85,9 +87,8 @@ subplot(2,2,4);
 for i = 1:max(IDX)
     plot3dvectors(cloud(IDX == i,:), '.');
 end
-% plot3dvectors(cloud(isnoise,:), '.');
+plot3dvectors(cloud(isnoise,:), '.');
 title(tit);
-%%
-% res
+%% 
 
 
