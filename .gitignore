@@ -4,7 +4,6 @@ unsupervised/data/segment.stl
 unsupervised/data/segment2.stl
 *.txt
 *.asv
-<<<<<<< HEAD
 *.pcd
 cloud_stitching/.DS_Store
 *.json
@@ -23,11 +22,9 @@ cloud_stitching/build/CMakeFiles/.DS_Store
 *internal
 *.o
 *.marks
-=======
 *.gz
 *.las
 *.laz
 *.ply
 *.tar
 *.conf
->>>>>>> master
