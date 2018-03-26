@@ -271,12 +271,15 @@ void visualize ( pointCloud::Ptr cloud , bool height = false )
       newcloud->points[j].x = cloud->points[j].x;
       newcloud->points[j].y = cloud->points[j].y;
       newcloud->points[j].z = cloud->points[j].z;
+      int intensity = 255 * (newcloud->points[j].z - minPt.z) / (maxPt.z - minPt.z);
 
-      int32_t color = castColor ( 255 * newcloud->points[j].z / maxPt.z, 0, 255 * (1 - newcloud->points[j].z / maxPt.z));
+      int32_t color = castColor ( intensity, 50, 255-intensity);
       newcloud->points[j].rgb = (color);
 
     }
-    vector<colorCloud::Ptr> singlecolored;
+    std::vector<colorCloud::Ptr> singlecolored;
+    singlecolored.push_back ( newcloud );
+
     visualize( singlecolored );
   }
 
