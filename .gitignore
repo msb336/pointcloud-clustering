@@ -27,3 +27,6 @@ cloud_stitching/build/CMakeFiles/.DS_Store
 *.ply
 *.tar
 *.conf
+.DS_Store
+*.zip
+*.txt
