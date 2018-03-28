@@ -10,7 +10,7 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/segmentation/extract_clusters.h>
 #include <boost/filesystem.hpp>
-#include <pcl/ml/kmeans.h>
+// #include <pcl/ml/kmeans.h>
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/common/common.h>
 
@@ -120,12 +120,13 @@ pointCloud::Ptr concatenate(fs::path directory, bool downsample = false)
   return concloud;
 }
 
+/*
 std::vector<colorCloud::Ptr> split(pointCloud::Ptr cloud, pcl::Kmeans::PointsToClusters index)
 {
   //Separate pointCloud cloud into individual clouds based on kmeans cluster index
   std::vector<colorCloud::Ptr> segmented_clouds;
   std::vector<int> counter;
-  std::vector<std::vector<int>> colors;
+  std::vector<std::vector< int > > colors;
   std::vector<int> list;
   int val = 0;
   
@@ -169,13 +170,14 @@ std::vector<colorCloud::Ptr> split(pointCloud::Ptr cloud, pcl::Kmeans::PointsToC
   }
   return segmented_clouds;
 }
+*/
 
 std::vector<colorCloud::Ptr> split(pointCloud::Ptr cloud,  std::vector<pcl::PointIndices> cluster_indices)
 {
   //Segment cloud into individual clusters based on point indices
   std::vector<colorCloud::Ptr> segmented_clouds;
   std::vector<int> counter;
-  std::vector<std::vector<int>> colors;
+  std::vector<std::vector<int> > colors;
 
   int val = 0;
   int j = 0;
@@ -312,6 +314,7 @@ pcl::SACSegmentation<pcl::PointXYZ> buildsegmentationobject()
   return seg;
 }
 
+/*
 std::vector<colorCloud::Ptr> kmeans(pointCloud::Ptr cloud, int segsize)
 {
 
@@ -334,7 +337,7 @@ std::vector<colorCloud::Ptr> kmeans(pointCloud::Ptr cloud, int segsize)
   return segments;
 }
 
-/*
+
 std::vector<colorCloud::Ptr> conditionalEuclidean(pointCloud::Ptr cloud, float tolerance)
 {
  pcl::ConditionalEuclideanClustering<pcl::PointXYZ> ec ;
@@ -342,6 +345,7 @@ std::vector<colorCloud::Ptr> conditionalEuclidean(pointCloud::Ptr cloud, float t
 
 }
 */
+
 
 std::vector<colorCloud::Ptr>  euclideanCluster(pointCloud::Ptr cloud, float tolerance)
 {
