@@ -13,11 +13,13 @@
 #include <pcl/registration/icp.h>
 #include <pcl/registration/icp_nl.h>
 #include <pcl/registration/transforms.h>
-
+#include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
 using pcl::visualization::PointCloudColorHandlerGenericField;
 using pcl::visualization::PointCloudColorHandlerCustom;
+
+namespace fs = ::boost::filesystem;
 
 //convenient typedefs
 typedef pcl::PointXYZ PointT;
@@ -67,7 +69,7 @@ public:
   }
 };
 
-void cloudfilter( PointCloud::Ptr cloud, float leafsize)
+void cloudfilter( PointCloud::Ptr cloud, float leafsize )
 {
     // Create the filtering object: downsample the dataset using a leaf size of 1cm
   pcl::VoxelGrid<pcl::PointXYZ> vg;
@@ -80,13 +82,13 @@ void cloudfilter( PointCloud::Ptr cloud, float leafsize)
 
 }
 
-void loadData (std::vector<PCD, Eigen::aligned_allocator<PCD> > &models)
+void loadData (std::string directory, int start, int finish, std::vector<PCD, Eigen::aligned_allocator<PCD> > &models)
 {
-  for (int i = 50; i <= 350; i++)
+  for (int i = start; i <= finish; i++)
   {
     std::stringstream s;
     s << i;
-    std::string loadfile = "../../barpcdfiles/barframe" + s.str() + ".pcd";
+    std::string loadfile = directory + s.str() + ".pcd";
       PCD m;
       m.f_name = loadfile;
       pcl::io::loadPCDFile (loadfile, *m.cloud);
@@ -96,6 +98,16 @@ void loadData (std::vector<PCD, Eigen::aligned_allocator<PCD> > &models)
     }
 }
 
+void noisefilter ( PointCloud::Ptr cloud, int k, float std)
+{
+  // Create the filtering object
+  pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+  sor.setInputCloud (cloud);
+  sor.setMeanK (k);
+  sor.setStddevMulThresh (std);
+  sor.filter (*cloud);
+  std::cout << "Cloud now has: " << cloud->size() << " points\n" ;
+}
 
 void pairAlign (const PointCloud::Ptr cloud_src, const PointCloud::Ptr cloud_tgt, PointCloud::Ptr output, Eigen::Matrix4f &final_transform, bool downsample = false)
 {
@@ -201,4 +213,4 @@ void pairAlign (const PointCloud::Ptr cloud_src, const PointCloud::Ptr cloud_tgt
   // *output += *cloud_src;
   
   final_transform = targetToSource;
- }
+}

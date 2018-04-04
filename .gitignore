@@ -14,7 +14,7 @@ cloud_stitching/build/CMakeFiles/.DS_Store
 *.c
 *.ply
 *.make
-*.DS_Store
+.DS_Store
 *.cxx
 *Makefile*
 *.includecache
@@ -30,5 +30,7 @@ cloud_stitching/build/CMakeFiles/.DS_Store
 .DS_Store
 *.zip
 *.txt
-.DS_Store
-.DS_Store
+*.xyz
+*.off
+*build*
+
