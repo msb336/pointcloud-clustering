@@ -1,19 +1,31 @@
 #include "includes.h"
 
 
-int main(int argc, char** argv)
+int main ( )
 {
+
   // Load data
-  std::stringstream directory ( argv[1] ) ;
-  int start = atoi(argv[2]);
-  int finish = atoi (argv[3]);
+  std::vector<std::string> parameters = readparameters("../parameters.txt");
+
+  std::string directory   =   parameters[0];
+  std::string prefix      =   parameters[1];
+  int start               =   stoi ( parameters[2] );
+  int finish              =   stoi ( parameters[3] );
+  int stepsize            =   stoi ( parameters[4] );
+  bool noise_filter       =   stob ( parameters[5] );
+  int k                   =   stoi ( parameters[6] );
+  float std               =   stof ( parameters[7] );
+  std::string saveloc     =   parameters[8];
+
+  std::cout << saveloc << std::endl;
+
 
   std::vector<PCD, Eigen::aligned_allocator<PCD> > data;
 
-  loadData(directory.str(), start, finish, data);
+  loadData(directory, prefix, start, finish, stepsize, data);
 
   // Check user input
-  if (data.empty ())
+  if ( data.empty () )
   {
     PCL_ERROR ("No Data\n");
   }
@@ -28,15 +40,14 @@ int main(int argc, char** argv)
       total->points.resize (total->width * total->height);
 
   Eigen::Matrix4f GlobalTransform = Eigen::Matrix4f::Identity (), pairTransform;
-  int stepsize = 1;
-  int k = 50;
-  float std = 1.0;
-  for (size_t i = stepsize; i < data.size (); i+=stepsize)
+
+  for (size_t i = 1; i < data.size (); i++)
   {
-    if ( i == stepsize )
+    if ( i == 1 )
     {
-      source = data[i-stepsize].cloud;
-      noisefilter ( source, k, std );
+      source = data[i-1].cloud;
+      if ( noise_filter == true )
+        noisefilter ( source, k, std );
     }
     else
     {
@@ -45,11 +56,12 @@ int main(int argc, char** argv)
 
 
     target = data[i].cloud;
-    noisefilter ( target, k, std );
+    if ( noise_filter )
+      noisefilter ( target, k, std );
 
 
     PointCloud::Ptr temp (new PointCloud);
-    PCL_INFO ("Aligning %s (%d) with %s (%d).\n", data[i-stepsize].f_name.c_str (), source->points.size (), data[i].f_name.c_str (), target->points.size ());
+    PCL_INFO ("Aligning %s (%d) with %s (%d).\n", data[i-1].f_name.c_str (), source->points.size (), data[i].f_name.c_str (), target->points.size ());
     pairAlign (source, target, temp, pairTransform, true);
 
     //transform current pair into the global transform
@@ -58,21 +70,18 @@ int main(int argc, char** argv)
     //update the global transform
     GlobalTransform = GlobalTransform * pairTransform;
 
-		//save aligned pair, transformed into the first cloud's frame
-        // std::stringstream ss;
-    // ss << "../individual clouds/aligned" << i << ".pcd";
-    // pcl::io::savePCDFile (ss.str (), *result, true);
     *total += *result;
   }
 
   std::stringstream path;
-  path << directory.str() << "concatenated/" ;
-  fs::path dir(path.str());
+  path << saveloc << "concat" << start << "-" << finish << "step" << stepsize;
+  if ( noise_filter == true )
+    path << "filtk" << k << "std" << std;
+  fs::path dir ( saveloc );
   if ( fs::create_directory(dir))
   {
   }
-  std::stringstream title;
-  title << path.str() << "fullconcatenation.pcd" ;
-pcl::io::savePCDFile(title.str() , *total);
+
+  pcl::io::savePCDFile(path.str() , *total);
     
 }

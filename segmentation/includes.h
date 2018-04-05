@@ -1,20 +1,29 @@
 #include <pcl/ModelCoefficients.h>
 #include <pcl/point_types.h>
+
 #include <pcl/io/pcd_io.h>
+
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/voxel_grid.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/kdtree/kdtree.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/segmentation/extract_clusters.h>
-#include <boost/filesystem.hpp>
-// #include <pcl/ml/kmeans.h>
-#include <pcl/visualization/cloud_viewer.h>
-#include <pcl/common/common.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 
+#include <pcl/features/normal_3d.h>
+
+#include <pcl/kdtree/kdtree.h>
+
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
+
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/segmentation/extract_clusters.h>
+
+#include <pcl/visualization/cloud_viewer.h>
+#include <pcl/common/common.h>
+
+#include <boost/filesystem.hpp>
+
+#include <vector>
+#include <fstream>
 
 #define BOOST_FILESYSTEM_VERSION 3
 #define BOOST_FILESYSTEM_NO_DEPRECATED 
@@ -23,6 +32,47 @@
 typedef pcl::PointCloud<pcl::PointXYZ> pointCloud;
 typedef pcl::PointCloud<pcl::PointXYZRGB> colorCloud;
 namespace fs = ::boost::filesystem;
+
+
+bool stob ( std::string truefalse )
+{
+  if ( truefalse == "true" || truefalse == "1")
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+void createpath(std::string fullfile)
+{
+  std::string delimiter = "/";
+  std::vector<std::string> tokens;
+  size_t pos = 0;
+
+  std::string path = fullfile.substr(0, fullfile.find_last_of("\\/"));
+
+  fs::path dir(path);
+  if ( fs::create_directory(dir))
+  {
+  }
+
+}
+
+void mkdir ( std::string directory )
+{
+  fs::path dir (directory);
+  if ( !fs::create_directory(dir))
+  {
+    std::cerr << "Couldn't make folder:\n" << directory << "\n";
+  }
+  else
+  {
+    std::cout << "created folder: " << directory << "\n";
+  }
+}
 
 pointCloud::Ptr loadcloud(std::string loadfile)
 {
@@ -43,22 +93,40 @@ void writetoPCD(std::stringstream ss, pointCloud::Ptr cloud)
 
 void writetoPCD (std::string directory, std::vector<colorCloud::Ptr> cloudvector)
 {
-  std::stringstream path;
-  path << directory << "segmented/" ;
-  fs::path dir(path.str());
-  if ( fs::create_directory(dir))
-  {
-  }
 
 
+  mkdir ( directory );
   pcl::PCDWriter writer;
   for (int i = 0; i < cloudvector.size(); i++)
   {
     std::stringstream title ;
-    title << path.str() << "segmented" << i << ".pcd" ;
-    std::cout << title.str() << std::endl;
+    title << directory << i << ".pcd" ;
+
     writer.write<pcl::PointXYZRGB> (title.str (), *cloudvector[i], false);
   }
+  std::cout << "Wrote " << cloudvector.size() << " to folder " << directory << "\n";
+}
+void writetoXYZ ( std::string directory, std::vector<colorCloud::Ptr> cloudvector )
+{
+  mkdir( directory );
+  for (int i = 0; i < cloudvector.size(); i++)
+  {
+    std::stringstream title ;
+    std::ofstream file ;
+    title << directory << i << ".xyz" ;
+    file.open ( title.str () );
+    for ( size_t j = 0; j < cloudvector[i]->points.size(); j++ )
+    {
+      
+      file << cloudvector[i]->points[j].x << " " << cloudvector[i]->points[j].y << " "
+      << cloudvector[i]->points[j].z << "\n";
+    }
+
+    file.close ();
+  }
+
+  std::cout << "Wrote " << cloudvector.size() << " to folder " << directory << "\n";
+
 }
 
 void writetoPCD(std::stringstream ss, colorCloud::Ptr cloud)
@@ -73,6 +141,7 @@ int32_t castColor(std::vector<int> colorvec)
   int32_t color = (colorvec[0] << 16) | (colorvec[1] << 8) | colorvec[2];
   return color;
 }
+
 int32_t castColor(int r, int g, int b)
 {
   int32_t color = (r << 16) | (g << 8) | b;
@@ -141,58 +210,6 @@ pointCloud::Ptr concatenate(fs::path directory, bool downsample = false)
   return concloud;
 }
 
-/*
-std::vector<colorCloud::Ptr> split(pointCloud::Ptr cloud, pcl::Kmeans::PointsToClusters index)
-{
-  //Separate pointCloud cloud into individual clouds based on kmeans cluster index
-  std::vector<colorCloud::Ptr> segmented_clouds;
-  std::vector<int> counter;
-  std::vector<std::vector< int > > colors;
-  std::vector<int> list;
-  int val = 0;
-  
-  for (int i = 0; i < index.size(); i++)
-  {
-    bool check = belong(list, index[i]);
-    
-    if (check == false)
-    {
-      list.push_back(index[i]);
-      colorCloud::Ptr newcloud (new colorCloud);
-      std::vector<int> newcolors;
-      newcolors.push_back(val);
-      newcolors.push_back(val / 5);
-      newcolors.push_back(255 - val);
-      val += 25;
-
-      newcloud->width    = 1;
-      newcloud->height   = 1;
-      newcloud->is_dense = false;
-      newcloud->points.resize (newcloud->width * newcloud->height);
-      newcloud->points[0].x = cloud->points[i].x;
-      newcloud->points[0].y = cloud->points[i].y;
-      newcloud->points[0].z = cloud->points[i].z;
-      newcloud->points[0].rgb = castColor(newcolors);
-
-      segmented_clouds.push_back (newcloud);
-      counter.push_back (0);
-      colors.push_back(newcolors);
-    }
-    else
-    {
-      counter[index[i]]++;
-      segmented_clouds[index[i]]->width++;
-      segmented_clouds[index[i]]->points.resize (segmented_clouds[index[i]]->width * segmented_clouds[index[i]]->height);
-      segmented_clouds[index[i]]->points[counter[index[i]]].x = cloud->points[i].x;
-      segmented_clouds[index[i]]->points[counter[index[i]]].y = cloud->points[i].y;
-      segmented_clouds[index[i]]->points[counter[index[i]]].z = cloud->points[i].z;
-      segmented_clouds[index[i]]->points[counter[index[i]]].rgb = castColor(colors[index[i]]);
-    }
-  }
-  return segmented_clouds;
-}
-*/
-
 std::vector<colorCloud::Ptr> split(pointCloud::Ptr cloud,  std::vector<pcl::PointIndices> cluster_indices)
 {
   //Segment cloud into individual clusters based on point indices
@@ -210,7 +227,7 @@ std::vector<colorCloud::Ptr> split(pointCloud::Ptr cloud,  std::vector<pcl::Poin
     newcolors.push_back(val);
     newcolors.push_back(val / 5);
     newcolors.push_back(255 - val);
-    std::cout << val << " " << val /5 << " " << 255-val << "\n" ;
+
     uint32_t color = castColor(newcolors);
 
     val += 255 / cluster_indices.size();
@@ -320,18 +337,37 @@ void noisefilter ( pointCloud::Ptr cloud, int k, float std)
   sor.filter (*cloud);
   std::cout << "Cloud now has: " << cloud->size() << " points\n" ;
 }
+
+void noisefilter ( colorCloud::Ptr cloud, int k, float std )
+{
+    // Create the filtering object
+  pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
+  sor.setInputCloud (cloud);
+  sor.setMeanK (k);
+  sor.setStddevMulThresh (std);
+  sor.filter (*cloud);
+  std::cout << "Cloud now has: " << cloud->size() << " points\n" ;
+}
  
 void downsample(pointCloud::Ptr cloud, float leafsize)
 {
-    // Create the filtering object: downsample the dataset using a leaf size of 1cm
+  // Create the filtering object
   pcl::VoxelGrid<pcl::PointXYZ> vg;
-  // pointCloud::Ptr cloud_filtered (new pointCloud);
   vg.setInputCloud (cloud);
   vg.setLeafSize(leafsize, leafsize, leafsize);
   vg.filter (*cloud);
   std::cout << "PointCloud after filtering has: " << cloud->points.size ()  << " data points." << std::endl;
 
-  // return cloud_filtered;
+}
+
+void downsample (colorCloud::Ptr cloud, float leafsize )
+{
+    // Create the filtering object
+  pcl::VoxelGrid<pcl::PointXYZRGB> vg;
+  vg.setInputCloud (cloud);
+  vg.setLeafSize(leafsize, leafsize, leafsize);
+  vg.filter (*cloud);
+  std::cout << "PointCloud after filtering has: " << cloud->points.size ()  << " data points." << std::endl;
 }
 
 pcl::SACSegmentation<pcl::PointXYZ> buildsegmentationobject()
@@ -345,53 +381,52 @@ pcl::SACSegmentation<pcl::PointXYZ> buildsegmentationobject()
   return seg;
 }
 
-/*
-std::vector<colorCloud::Ptr> kmeans(pointCloud::Ptr cloud, int segsize)
-{
-
-  pcl::Kmeans real(static_cast<int> (cloud->points.size()), 3);
-  real.setClusterSize(segsize);
-
-  for (size_t i =0; i < cloud->points.size(); i++)
-  {
-    std::vector<float> data(3);
-    data[0] = cloud->points[i].x;
-    data[1] = cloud->points[i].y;
-    data[2] = cloud->points[i].z;
-    real.addDataPoint(data);
-  }
-  real.kMeans();
-
-  pcl::Kmeans::Centroids centroids = real.get_centroids();
-  pcl::Kmeans::PointsToClusters cluster_index = real.get_index();
-  std::vector<colorCloud::Ptr> segments =  split(cloud, cluster_index);
-  return segments;
-}
-
-
-std::vector<colorCloud::Ptr> conditionalEuclidean(pointCloud::Ptr cloud, float tolerance)
-{
- pcl::ConditionalEuclideanClustering<pcl::PointXYZ> ec ;
- ec.setInputCloud (cloud) ;
-
-}
-*/
-
-
-std::vector<colorCloud::Ptr>  euclideanCluster(pointCloud::Ptr cloud, float tolerance)
+std::vector<colorCloud::Ptr>  euclideanCluster(pointCloud::Ptr cloud, float tolerance, int minclust, int maxclust)
 {
   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
   tree->setInputCloud (cloud);
   std::vector<pcl::PointIndices> cluster_index;
   pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
   ec.setClusterTolerance (tolerance);
-  ec.setMinClusterSize (100);
-  ec.setMaxClusterSize (10000);
+  ec.setMinClusterSize (minclust);
+  ec.setMaxClusterSize (maxclust);
   ec.setSearchMethod (tree);
   ec.setInputCloud (cloud);
   ec.extract (cluster_index);
 
   std::vector<colorCloud::Ptr> segments =  split(cloud, cluster_index);
   return segments;
+
+}
+
+std::vector<std::string> readparameters ( std::string filename )
+{
+    std::vector<std::string> parameters ;
+    std::ifstream inFile;
+    char x;
+    
+    inFile.open(filename);
+    if (!inFile) {
+        std::cerr << "Unable to open parameter file";
+        exit(1);
+    }
+
+    while (inFile >> x) 
+    {
+        std::string sum;
+        if ( x == ':')
+        {
+
+            while ( inFile.peek() != '\n' && inFile >> x )
+            {
+                sum += x;
+            }
+
+            parameters.push_back (sum);
+        }
+    }
+
+    inFile.close();
+    return parameters ;
 
 }

@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <vector>
+
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Advancing_front_surface_reconstruction.h>
 #include <CGAL/tuple.h>
@@ -10,11 +12,12 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Timer.h>
 #include <CGAL/Polyhedron_3.h>
-
 #include <CGAL/Polygon_mesh_processing/triangulate_hole.h>
-#include <vector>
-#include <boost/foreach.hpp>
 
+#include <boost/foreach.hpp>
+#include <boost/filesystem.hpp>
+
+namespace fs = ::boost::filesystem;
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
 typedef CGAL::Polyhedron_3<Kernel>     Polyhedron;
@@ -75,6 +78,22 @@ struct Perimeter {
 };
 
 
+void createpath(std::string fullfile)
+{
+  std::string delimiter = "/";
+  std::vector<std::string> tokens;
+  size_t pos = 0;
+
+
+  std::string path = fullfile.substr(0, fullfile.find_last_of("\\/"));
+
+  fs::path dir(path);
+  if ( fs::create_directory(dir))
+  {
+  }
+
+}
+
 void advancingFrontSurfaceReconstruction( std::vector<Point_3> points, Perimeter perimeter, std::string savefile )
 {
   std::vector<Facet> facets ;
@@ -82,6 +101,7 @@ void advancingFrontSurfaceReconstruction( std::vector<Point_3> points, Perimeter
                                                points.end(),
                                                std::back_inserter(facets),
                                                perimeter);
+  createpath(savefile);
 
   std::ofstream out ( savefile );
   out << "OFF\n";
@@ -95,6 +115,7 @@ void advancingFrontSurfaceReconstruction( std::vector<Point_3> points, Perimeter
             std::ostream_iterator<Facet>(out, "\n"));
 }
 
+
 Reconstruction scaleSpaceReconstruction ( std::vector<Point> points , std::string savefile)
 {
   CGAL::Timer t;
@@ -107,7 +128,7 @@ Reconstruction scaleSpaceReconstruction ( std::vector<Point> points , std::strin
   std::cerr << "done in " << t.time() << " sec." << std::endl;
 
   t.reset();
-
+  createpath(savefile);
   std::ofstream out ( savefile );
   out << reconstruct;
   std::cerr << "Writing result in " << t.time() << " sec." << std::endl;
@@ -116,7 +137,7 @@ Reconstruction scaleSpaceReconstruction ( std::vector<Point> points , std::strin
 
 }
 
-std::vector<Point> loadexact ( const char* fname )
+std::vector<Point> loadexact ( std::string fname ) //const char* fname )
 {
   std::ifstream in ( fname ) ;
   std::vector<Point> pointset;
@@ -128,7 +149,7 @@ std::vector<Point> loadexact ( const char* fname )
   return pointset;
 }
 
-std::vector<Point_3> loadsimple ( const char* fname )
+std::vector<Point_3> loadsimple ( std::string fname ) //const char* fname )
 {
   std::ifstream in ( fname ) ;
   std::vector<Point_3> pointset;
@@ -176,4 +197,36 @@ Polyhedron fillholes ( Polyhedron poly )
   std::cout << std::endl;
   std::cout << nb_holes << " holes have been filled" << std::endl;
   return poly ;
+}
+
+std::vector<std::string> readparameters ( std::string filename )
+{
+    std::vector<std::string> parameters ;
+    std::ifstream inFile;
+    char x;
+    
+    inFile.open(filename);
+    if (!inFile) {
+        std::cerr << "Unable to open parameter file";
+        exit(1);
+    }
+
+    while (inFile >> x) 
+    {
+        std::string sum;
+        if ( x == ':')
+        {
+
+            while ( inFile.peek() != '\n' && inFile >> x )
+            {
+                sum += x;
+            }
+
+            parameters.push_back (sum);
+        }
+    }
+
+    inFile.close();
+    return parameters ;
+
 }

@@ -16,6 +16,7 @@
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
+
 using pcl::visualization::PointCloudColorHandlerGenericField;
 using pcl::visualization::PointCloudColorHandlerCustom;
 
@@ -26,7 +27,6 @@ typedef pcl::PointXYZ PointT;
 typedef pcl::PointCloud<PointT> PointCloud;
 typedef pcl::PointNormal PointNormalT;
 typedef pcl::PointCloud<PointNormalT> PointCloudWithNormals;
-
 
 
 //convenient structure to handle our pointclouds
@@ -69,6 +69,18 @@ public:
   }
 };
 
+bool stob ( std::string truefalse )
+{
+  if ( truefalse == "true" || truefalse == "1")
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
 void cloudfilter( PointCloud::Ptr cloud, float leafsize )
 {
     // Create the filtering object: downsample the dataset using a leaf size of 1cm
@@ -82,20 +94,18 @@ void cloudfilter( PointCloud::Ptr cloud, float leafsize )
 
 }
 
-void loadData (std::string directory, int start, int finish, std::vector<PCD, Eigen::aligned_allocator<PCD> > &models)
+void loadData (std::string directory, std::string prefix, int start, int finish, int stepsize, std::vector<PCD, Eigen::aligned_allocator<PCD> > &models)
 {
-  for (int i = start; i <= finish; i++)
+  for (int i = start; i <= finish; i+=stepsize)
   {
     std::stringstream s;
     s << i;
-    std::string loadfile = directory + s.str() + ".pcd";
-      PCD m;
-      m.f_name = loadfile;
-      pcl::io::loadPCDFile (loadfile, *m.cloud);
-
-
-      models.push_back (m);
-    }
+    std::string loadfile = directory + prefix + s.str() + ".pcd";
+    PCD m;
+    m.f_name = loadfile;
+    pcl::io::loadPCDFile (loadfile, *m.cloud);
+    models.push_back (m);
+  }
 }
 
 void noisefilter ( PointCloud::Ptr cloud, int k, float std)
@@ -213,4 +223,36 @@ void pairAlign (const PointCloud::Ptr cloud_src, const PointCloud::Ptr cloud_tgt
   // *output += *cloud_src;
   
   final_transform = targetToSource;
+}
+
+std::vector<std::string> readparameters ( std::string filename )
+{
+    std::vector<std::string> parameters ;
+    std::ifstream inFile;
+    char x;
+    
+    inFile.open(filename);
+    if (!inFile) {
+        std::cerr << "Unable to open parameter file";
+        exit(1);
+    }
+
+    while (inFile >> x) 
+    {
+        std::string sum;
+        if ( x == ':')
+        {
+
+            while ( inFile.peek() != '\n' && inFile >> x )
+            {
+                sum += x;
+            }
+
+            parameters.push_back (sum);
+        }
+    }
+
+    inFile.close();
+    return parameters ;
+
 }
