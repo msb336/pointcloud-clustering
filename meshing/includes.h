@@ -25,7 +25,6 @@ typedef Polyhedron::Halfedge_handle    Halfedge_handle;
 typedef Polyhedron::Facet_handle       Facet_handle;
 typedef Polyhedron::Vertex_handle      Vertex_handle;
 
-
 typedef CGAL::Simple_cartesian<double> K;
 typedef K::Point_3  Point_3;
 typedef CGAL::cpp11::array<std::size_t,3> Facet;
@@ -137,7 +136,7 @@ Reconstruction scaleSpaceReconstruction ( std::vector<Point> points , std::strin
 
 }
 
-std::vector<Point> loadexact ( std::string fname ) //const char* fname )
+std::vector<Point> loadexact ( std::string fname )
 {
   std::ifstream in ( fname ) ;
   std::vector<Point> pointset;
@@ -149,7 +148,7 @@ std::vector<Point> loadexact ( std::string fname ) //const char* fname )
   return pointset;
 }
 
-std::vector<Point_3> loadsimple ( std::string fname ) //const char* fname )
+std::vector<Point_3> loadsimple ( std::string fname )
 {
   std::ifstream in ( fname ) ;
   std::vector<Point_3> pointset;
@@ -165,9 +164,9 @@ Polyhedron offToPoly ( const char* filename )
 {
   std::ifstream input(filename);
   Polyhedron poly;
-  // if ( !input || !(input >> poly) || poly.empty() ) {
-  //   std::cerr << "Not a valid off file." << std::endl;
-  // }
+  if ( !input || !(input >> poly) || poly.empty() ) {
+    std::cerr << "Not a valid off file." << std::endl;
+  }
   return poly;
 }
 

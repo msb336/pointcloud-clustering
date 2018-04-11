@@ -6,6 +6,7 @@
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/filters/project_inliers.h>
 
 #include <pcl/features/normal_3d.h>
 
@@ -74,14 +75,89 @@ void mkdir ( std::string directory )
   }
 }
 
+
+pointCloud::Ptr loadXYZ ( std::string filename )
+{
+  pointCloud::Ptr cloud ( new pointCloud );
+  std::ifstream inFile;
+  char x;
+  
+  inFile.open ( filename );
+
+  if (!inFile) {
+      std::cerr << "Unable to open xyz file";
+      exit(1);
+  }
+
+  std::vector<std::string> values ;
+  std::vector<pcl::PointXYZ> pointset ;
+  std::string i;
+
+  while (inFile >> x) 
+  {
+      // std:cout << x ;
+      if ( x == ' ' || x == ',' || x == '\t' )
+        inFile  >> x ;
+
+      i += x ;
+      if ( inFile.peek () == ' ' || inFile.peek () == ',' )
+      {
+        // inFile >> x;
+        values.push_back(i);
+        i = "";
+      }
+
+
+      if ( inFile.peek () == '\n' )
+      {
+        // std::cout << values[0] << " " << values[1] << " " << values[2] << std::endl;
+        values.push_back(i);
+        pcl::PointXYZ point;
+        point.x = stof(values[0]);
+        point.y = stof(values[1]);
+        point.z = stof(values[2]);
+
+        pointset.push_back ( point );
+
+
+        values.clear () ;
+        i = "";
+      }
+  }
+  cloud->width = pointset.size ();
+  cloud->height = 1;
+  cloud->is_dense = true;
+  cloud->points.resize (cloud->width * cloud->height);
+
+  for ( size_t i = 0; i < pointset.size (); i ++ )
+  {
+    cloud->points[i] = pointset[i];
+  }
+
+  std::cout << "Cloud Size: " << cloud->points.size() << std::endl;
+  inFile.close ( );
+  return cloud;
+
+}
+
 pointCloud::Ptr loadcloud(std::string loadfile)
 {
-    // std::string filename = loadfile[1];
     std::string filename = loadfile;
     pointCloud::Ptr newcloud ( new pointCloud );
+    
+    std::string ex = fs::extension ( filename ) ;
 
-    pcl::PCDReader reader;
-    reader.read (filename, *newcloud);
+
+    if ( ex == ".xyz" )
+    {
+       newcloud = loadXYZ ( filename ) ;
+    }
+    else
+    {
+      pcl::PCDReader reader;
+      reader.read (filename, *newcloud);
+    }
+
     return newcloud;
 }
 
@@ -370,15 +446,83 @@ void downsample (colorCloud::Ptr cloud, float leafsize )
   std::cout << "PointCloud after filtering has: " << cloud->points.size ()  << " data points." << std::endl;
 }
 
-pcl::SACSegmentation<pcl::PointXYZ> buildsegmentationobject()
+colorCloud::Ptr projectPlane ( colorCloud::Ptr cloud, pcl::ModelCoefficients::Ptr coefficients )
 {
+  colorCloud::Ptr cloud_projected ( new colorCloud );
+  pcl::ProjectInliers<pcl::PointXYZRGB> proj;
+  proj.setModelType (pcl::SACMODEL_PLANE);
+  proj.setInputCloud (cloud);
+  proj.setModelCoefficients (coefficients);
+  proj.filter (*cloud_projected);
+  return cloud_projected;
+
+}
+
+std::vector<colorCloud::Ptr> sacSegmentation ( pointCloud::Ptr cloud,  float distance, int mininum )
+{
+
+  std::vector<pcl::PointIndices> plane_indices;
+  pcl::ExtractIndices<pcl::PointXYZ> extract;
   pcl::SACSegmentation<pcl::PointXYZ> seg;
+  
   seg.setOptimizeCoefficients (true);
   seg.setModelType (pcl::SACMODEL_PLANE);
   seg.setMethodType (pcl::SAC_RANSAC);
-  seg.setMaxIterations (100);
-  seg.setDistanceThreshold (0.02);
-  return seg;
+  seg.setDistanceThreshold ( distance );
+
+  int r       =   255      ;
+  int b       =   0        ;
+  int in_size =   2000000  ;
+
+  std::cout << "Max size: " << in_size << std::endl;
+  std::vector< colorCloud::Ptr > segments ;
+
+  while ( in_size > mininum )
+  {
+    pcl::ModelCoefficients::Ptr coefficients ( new pcl::ModelCoefficients );
+    pcl::PointIndices::Ptr inliers ( new pcl::PointIndices );
+
+    seg.setInputCloud ( cloud );
+    seg.segment ( *inliers, *coefficients );
+
+    extract.setInputCloud ( cloud );
+    extract.setIndices ( inliers );
+    extract.setNegative ( true );
+    extract.filter ( *cloud );
+
+
+    plane_indices.push_back ( *inliers );
+
+    colorCloud::Ptr plane ( new colorCloud );
+    plane->width = inliers->indices.size();
+    plane->height = 1;
+    plane->is_dense = true;
+    plane->points.resize (plane->width * plane->height);
+
+    int32_t color = castColor (r, 0, b);
+
+    r-=25;
+    b+=25;
+    coefficients->values.resize (4) ;
+    in_size = inliers->indices.size () ;
+    std::cout << "Plane size: " << inliers->indices.size () << std::endl;
+    std::cout << " Plane Coefficients: " << coefficients->values[0] << " " 
+    << coefficients->values[1] << " " << coefficients->values[2] << " " << coefficients->values[3] << std::endl;
+
+    for (size_t j = 0; j < inliers->indices.size(); j++ )
+    {
+      plane->points[j].x = cloud->points[inliers->indices[j]].x;
+      plane->points[j].y = cloud->points[inliers->indices[j]].y;
+      plane->points[j].z = cloud->points[inliers->indices[j]].z;
+      plane->points[j].rgb = color ;
+    }
+
+    colorCloud::Ptr projected = projectPlane ( plane, coefficients );
+    segments.push_back ( projected ) ;
+
+  }
+
+  return segments;
 }
 
 std::vector<colorCloud::Ptr>  euclideanCluster(pointCloud::Ptr cloud, float tolerance, int minclust, int maxclust)
@@ -421,6 +565,7 @@ std::vector<std::string> readparameters ( std::string filename )
             {
                 sum += x;
             }
+            std::cout << sum << std::endl;
 
             parameters.push_back (sum);
         }

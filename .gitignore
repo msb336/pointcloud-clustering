@@ -34,3 +34,10 @@ cloud_stitching/build/CMakeFiles/.DS_Store
 *.off
 *build*
 
+.DS_Store
+.DS_Store
+cloud_stitching/build/pcd_registration
+data/moveHighTest/concatenated/concat1-200step10filtk100std0.8
+meshing/build/mesh
+segmentation/build/segment
+meshing/build/mesh

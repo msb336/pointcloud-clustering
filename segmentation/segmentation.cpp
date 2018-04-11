@@ -2,30 +2,32 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int main ( )
+int main ( int argc, char** argv )
 {
-  std::vector<std::string> parameters = readparameters ( "../parameters.txt" );
+  std::stringstream readfile ( argv[1] );
+  std::vector<std::string> parameters = readparameters ( readfile.str() );
 
-  std::string fullfile =   parameters[0];
+  std::string fullfile    =   parameters[0];
 
-  float sample_leaf_size      =   stof ( parameters[1] );
-  bool noise_filter     =   stob ( parameters[2] );
-  int noise_neighbors   =   stoi ( parameters[3] );
-  float noise_std       =   stof ( parameters[4] );
+  float sample_leaf_size  =   stof ( parameters[1] );
+  bool noise_filter       =   stob ( parameters[2] );
+  int noise_neighbors     =   stoi ( parameters[3] );
+  float noise_std         =   stof ( parameters[4] );
+  
+  std::string seg_method  =   parameters[5] ;
+  float tolerance         =   stof ( parameters[6] );
+  int   minclust          =   stoi ( parameters[7] );
+  int   maxclust          =   stoi ( parameters[8] );
 
-  float tolerance       =   stof ( parameters[5] );
-  int   minclust        =   stoi ( parameters[6] );
-  int   maxclust        =   stoi ( parameters[7] );
-
-  float post_leaf_size =   stof ( parameters[8] );
-  bool post_noise       =   stob ( parameters[9] );
-  int post_neighbors    =   stoi ( parameters[10] );
-  float post_std        =   stof ( parameters[11] );
+  float post_leaf_size    =   stof ( parameters[9] );
+  bool post_noise         =   stob ( parameters[10] );
+  int post_neighbors      =   stoi ( parameters[11] );
+  float post_std          =   stof ( parameters[12] );
 
 
-  bool savesegs        =   stob ( parameters[12] );
-  std::string filetype =   parameters[14] ;
-  bool vis             =   stob ( parameters[15] );
+  bool savesegs           =   stob ( parameters[13] );
+  std::string filetype    =   parameters[15] ;
+  bool vis                =   stob ( parameters[16] );
 
   pointCloud::Ptr cloud = loadcloud ( fullfile );
 
@@ -36,9 +38,27 @@ int main ( )
     noisefilter ( cloud, noise_neighbors, noise_std );
 
   if ( vis == true)
-    visualize ( cloud, false ) ;
+    visualize ( cloud, true ) ;
 
-  std::vector<colorCloud::Ptr> segments = euclideanCluster ( cloud, tolerance, minclust, maxclust );
+
+
+  std::vector<colorCloud::Ptr> segments;
+
+  if (seg_method == "sac")
+  {
+    segments = sacSegmentation ( cloud, tolerance, minclust);
+  }
+  else if ( seg_method == "euclideancluster" )
+  {
+    segments = euclideanCluster ( cloud, tolerance, minclust, maxclust );
+  }
+  else
+  {
+    std::cerr << "Unrecognized segmentation method: " << seg_method << std::endl;
+    exit(1);
+    
+  }
+
 
   if ( post_leaf_size > 0 || post_noise == true )
   {
@@ -61,7 +81,8 @@ int main ( )
   if ( savesegs == true )
   {
     std::transform ( filetype.begin (), filetype.end (), filetype.begin (), ::tolower );
-    std::string saveloc = parameters[13] ;
+
+    std::string saveloc = parameters[14] ;
 
     if ( filetype == ".xyz" || filetype == "xyz")
     {

@@ -16,7 +16,6 @@
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
-
 using pcl::visualization::PointCloudColorHandlerGenericField;
 using pcl::visualization::PointCloudColorHandlerCustom;
 
@@ -88,6 +87,17 @@ void cloudfilter( PointCloud::Ptr cloud, float leafsize )
 
   vg.setInputCloud (cloud);
   // vg.setLeafSize (0.01f, 0.01f, 0.01f);
+  vg.setLeafSize(leafsize, leafsize, leafsize);
+  vg.filter (*cloud);
+  std::cout << "PointCloud after filtering has: " << cloud->points.size ()  << " data points." << std::endl;
+
+}
+
+void downsample(PointCloud::Ptr cloud, float leafsize)
+{
+  // Create the filtering object
+  pcl::VoxelGrid<pcl::PointXYZ> vg;
+  vg.setInputCloud (cloud);
   vg.setLeafSize(leafsize, leafsize, leafsize);
   vg.filter (*cloud);
   std::cout << "PointCloud after filtering has: " << cloud->points.size ()  << " data points." << std::endl;

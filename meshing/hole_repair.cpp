@@ -1,6 +1,6 @@
 #include "includes.h"
 
-int main(int argc, char* argv[])
+int main(int argc, char** argv)
 {
   const char* filename = argv[1];
   const char* o  = argv[2];

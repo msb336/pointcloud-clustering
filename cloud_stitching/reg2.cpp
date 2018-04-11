@@ -1,6 +1,5 @@
 #include "includes.h"
 
-
 int main ( )
 {
 
@@ -15,7 +14,8 @@ int main ( )
   bool noise_filter       =   stob ( parameters[5] );
   int k                   =   stoi ( parameters[6] );
   float std               =   stof ( parameters[7] );
-  std::string saveloc     =   parameters[8];
+  float leafsize          =   stof ( parameters[8] );
+  std::string saveloc     =   parameters[9];
 
   std::cout << saveloc << std::endl;
 
@@ -81,7 +81,12 @@ int main ( )
   if ( fs::create_directory(dir))
   {
   }
-
   pcl::io::savePCDFile(path.str() , *total);
-    
+
+  if ( leafsize > 0)
+  {
+    downsample(total, leafsize) ;
+  }
+  path << "downsampled" << leafsize ;
+  pcl::io::savePCDFile ( path.str(), *total );
 }
