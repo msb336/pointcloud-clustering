@@ -41,3 +41,6 @@ data/moveHighTest/concatenated/concat1-200step10filtk100std0.8
 meshing/build/mesh
 segmentation/build/segment
 meshing/build/mesh
+cloud_stitching/build/pcd_registration
+includes/test
+meshing/build/mesh

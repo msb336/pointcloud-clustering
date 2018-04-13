@@ -2,6 +2,7 @@
 #include <fstream>
 #include <algorithm>
 #include <vector>
+#include <map>
 
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Advancing_front_surface_reconstruction.h>
@@ -12,7 +13,11 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Timer.h>
 #include <CGAL/Polyhedron_3.h>
+
 #include <CGAL/Polygon_mesh_processing/triangulate_hole.h>
+#include <CGAL/Polygon_mesh_processing/refine.h>
+#include <CGAL/Polygon_mesh_processing/fair.h>
+
 
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
@@ -25,6 +30,7 @@ typedef Polyhedron::Halfedge_handle    Halfedge_handle;
 typedef Polyhedron::Facet_handle       Facet_handle;
 typedef Polyhedron::Vertex_handle      Vertex_handle;
 
+
 typedef CGAL::Simple_cartesian<double> K;
 typedef K::Point_3  Point_3;
 typedef CGAL::cpp11::array<std::size_t,3> Facet;
@@ -34,6 +40,7 @@ typedef std::pair<Point_3, Vector> Pwn;
 typedef CGAL::Scale_space_surface_reconstruction_3<Kernel>    Reconstruction;
 typedef Kernel::Point_3 Point;
 typedef Reconstruction::Facet_const_iterator                   Facet_iterator;
+
 
 
 namespace std {
@@ -93,7 +100,19 @@ void createpath(std::string fullfile)
 
 }
 
-void advancingFrontSurfaceReconstruction( std::vector<Point_3> points, Perimeter perimeter, std::string savefile )
+bool stob ( std::string truefalse )
+{
+  if ( truefalse == "true" || truefalse == "1")
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+Polyhedron advancingFrontSurfaceReconstruction( std::vector<Point_3> points, Perimeter perimeter, std::string savefile )
 {
   std::vector<Facet> facets ;
   CGAL::advancing_front_surface_reconstruction(points.begin(),
@@ -112,8 +131,23 @@ void advancingFrontSurfaceReconstruction( std::vector<Point_3> points, Perimeter
   std::copy(facets.begin(),
             facets.end(),
             std::ostream_iterator<Facet>(out, "\n"));
+  
+  Polyhedron poly;
+
+  return poly;
+
 }
 
+void createPolyhedron ( Reconstruction recon )
+{
+  // Polyhedron poly ( recon.number_of_points(), recon.number_of_facets(), ;
+  std::cout << recon.number_of_facets() << " " <<recon.number_of_points() << std::endl;
+  
+}
+void createPolyhedron ( Polyhedron poly )
+{
+  std::cout << poly.size_of_facets() << " " << poly.size_of_vertices () << std::endl;
+}
 
 Reconstruction scaleSpaceReconstruction ( std::vector<Point> points , std::string savefile)
 {
@@ -198,6 +232,8 @@ Polyhedron fillholes ( Polyhedron poly )
   return poly ;
 }
 
+
+
 std::vector<std::string> readparameters ( std::string filename )
 {
     std::vector<std::string> parameters ;
@@ -227,5 +263,48 @@ std::vector<std::string> readparameters ( std::string filename )
 
     inFile.close();
     return parameters ;
+
+}
+
+void extract_k_ring( Vertex_handle v, int k, std::vector<Vertex_handle>& qv )
+{
+  std::map<Vertex_handle, int>  D;
+  qv.push_back(v);
+  D[v] = 0;
+  std::size_t current_index = 0;
+  int dist_v;
+  while (current_index < qv.size() && (dist_v = D[qv[current_index]]) < k)
+  {
+    v = qv[current_index++];
+    Polyhedron::Halfedge_around_vertex_circulator e(v->vertex_begin()), e_end(e);
+    do {
+      Vertex_handle new_v = e->opposite()->vertex();
+      if (D.insert(std::make_pair(new_v, dist_v + 1)).second) {
+        qv.push_back(new_v);
+      }
+    } while (++e != e_end);
+  }
+}
+
+void refinemesh ( Polyhedron poly )
+{
+  std::vector<Polyhedron::Facet_handle>  new_facets;
+  std::vector<Vertex_handle> new_vertices;
+  CGAL::Polygon_mesh_processing::refine(poly, faces(poly), 
+                  std::back_inserter(new_facets),
+                  std::back_inserter(new_vertices),
+                  CGAL::Polygon_mesh_processing::parameters::density_control_factor(2.));
+
+  std::cout << "Refinement added " << new_vertices.size() << " vertices." << std::endl;
+}
+void fair ( Polyhedron poly )
+{
+  Polyhedron::Vertex_iterator v = poly.vertices_begin();
+
+  std::advance(v, 82/*e.g.*/);
+  std::vector<Vertex_handle> region;
+  extract_k_ring(v, 12/*e.g.*/, region);
+  bool success = CGAL::Polygon_mesh_processing::fair(poly, region);
+  std::cout << "Fairing : " << (success ? "succeeded" : "failed") << std::endl;
 
 }
