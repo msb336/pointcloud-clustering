@@ -44,3 +44,4 @@ meshing/build/mesh
 cloud_stitching/build/pcd_registration
 includes/test
 meshing/build/mesh
+*.mesh

@@ -4,6 +4,8 @@
 #include <vector>
 #include <map>
 
+#define BOOST_PARAMETER_MAX_ARITY 12
+
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Advancing_front_surface_reconstruction.h>
 #include <CGAL/tuple.h>
@@ -18,6 +20,14 @@
 #include <CGAL/Polygon_mesh_processing/refine.h>
 #include <CGAL/Polygon_mesh_processing/fair.h>
 
+#include <CGAL/Mesh_triangulation_3.h>
+#include <CGAL/Mesh_complex_3_in_triangulation_3.h>
+#include <CGAL/Mesh_criteria_3.h>
+#include <CGAL/boost/graph/helpers.h>
+#include <CGAL/Polyhedral_mesh_domain_3.h>
+#include <CGAL/make_mesh_3.h>
+#include <CGAL/refine_mesh_3.h>
+
 
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
@@ -26,9 +36,24 @@ namespace fs = ::boost::filesystem;
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
 typedef CGAL::Polyhedron_3<Kernel>     Polyhedron;
+typedef CGAL::Polyhedral_mesh_domain_3<Polyhedron, Kernel> Mesh_domain;
+
 typedef Polyhedron::Halfedge_handle    Halfedge_handle;
 typedef Polyhedron::Facet_handle       Facet_handle;
 typedef Polyhedron::Vertex_handle      Vertex_handle;
+
+#ifdef CGAL_CONCURRENT_MESH_3
+typedef CGAL::Parallel_tag Concurrency_tag;
+#else
+typedef CGAL::Sequential_tag Concurrency_tag;
+#endif
+
+// Triangulation
+typedef CGAL::Mesh_triangulation_3<Mesh_domain,CGAL::Default,Concurrency_tag>::type Tr;
+typedef CGAL::Mesh_complex_3_in_triangulation_3<Tr> C3t3;
+// Mesh Criteria
+typedef CGAL::Mesh_criteria_3<Tr> Mesh_criteria;
+using namespace CGAL::parameters;
 
 
 typedef CGAL::Simple_cartesian<double> K;
@@ -40,6 +65,7 @@ typedef std::pair<Point_3, Vector> Pwn;
 typedef CGAL::Scale_space_surface_reconstruction_3<Kernel>    Reconstruction;
 typedef Kernel::Point_3 Point;
 typedef Reconstruction::Facet_const_iterator                   Facet_iterator;
+typedef Reconstruction::Point_const_iterator Point_iterator;
 
 
 
@@ -83,157 +109,7 @@ struct Perimeter {
   }
 };
 
-
-void createpath(std::string fullfile)
-{
-  std::string delimiter = "/";
-  std::vector<std::string> tokens;
-  size_t pos = 0;
-
-
-  std::string path = fullfile.substr(0, fullfile.find_last_of("\\/"));
-
-  fs::path dir(path);
-  if ( fs::create_directory(dir))
-  {
-  }
-
-}
-
-bool stob ( std::string truefalse )
-{
-  if ( truefalse == "true" || truefalse == "1")
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-Polyhedron advancingFrontSurfaceReconstruction( std::vector<Point_3> points, Perimeter perimeter, std::string savefile )
-{
-  std::vector<Facet> facets ;
-  CGAL::advancing_front_surface_reconstruction(points.begin(),
-                                               points.end(),
-                                               std::back_inserter(facets),
-                                               perimeter);
-  createpath(savefile);
-
-  std::ofstream out ( savefile );
-  out << "OFF\n";
-  out << points.size() << " " << facets.size() << " " << 0 << "\n";
-  std::copy(points.begin(),
-            points.end(),
-            std::ostream_iterator<Point_3>(out, "\n"));
-
-  std::copy(facets.begin(),
-            facets.end(),
-            std::ostream_iterator<Facet>(out, "\n"));
-  
-  Polyhedron poly;
-
-  return poly;
-
-}
-
-void createPolyhedron ( Reconstruction recon )
-{
-  // Polyhedron poly ( recon.number_of_points(), recon.number_of_facets(), ;
-  std::cout << recon.number_of_facets() << " " <<recon.number_of_points() << std::endl;
-  
-}
-void createPolyhedron ( Polyhedron poly )
-{
-  std::cout << poly.size_of_facets() << " " << poly.size_of_vertices () << std::endl;
-}
-
-Reconstruction scaleSpaceReconstruction ( std::vector<Point> points , std::string savefile)
-{
-  CGAL::Timer t;
-  t.start();
-
-  // Construct the mesh in a scale space.
-  Reconstruction reconstruct (points.begin(), points.end());
-  reconstruct.increase_scale(4);
-  reconstruct.reconstruct_surface();
-  std::cerr << "done in " << t.time() << " sec." << std::endl;
-
-  t.reset();
-  createpath(savefile);
-  std::ofstream out ( savefile );
-  out << reconstruct;
-  std::cerr << "Writing result in " << t.time() << " sec." << std::endl;
-  std::cerr << "Done." << std::endl;
-  return reconstruct;
-
-}
-
-std::vector<Point> loadexact ( std::string fname )
-{
-  std::ifstream in ( fname ) ;
-  std::vector<Point> pointset;
-
-   std::copy(std::istream_iterator<Point>(in),
-            std::istream_iterator<Point>(),
-            std::back_inserter(pointset));
-  std::cout << "loaded pointset of size: " << pointset.size() << std::endl;
-  return pointset;
-}
-
-std::vector<Point_3> loadsimple ( std::string fname )
-{
-  std::ifstream in ( fname ) ;
-  std::vector<Point_3> pointset;
-
-   std::copy(std::istream_iterator<Point_3>(in),
-            std::istream_iterator<Point_3>(),
-            std::back_inserter(pointset));
-  std::cout << "loaded pointset of size: " << pointset.size() << std::endl;
-  return pointset;
-}
-
-Polyhedron offToPoly ( const char* filename )
-{
-  std::ifstream input(filename);
-  Polyhedron poly;
-  if ( !input || !(input >> poly) || poly.empty() ) {
-    std::cerr << "Not a valid off file." << std::endl;
-  }
-  return poly;
-}
-
-Polyhedron fillholes ( Polyhedron poly )
-{
-  unsigned int nb_holes = 0;
-  BOOST_FOREACH(Halfedge_handle h, halfedges(poly))
-  {
-    if(h->is_border())
-    {
-      std::vector<Facet_handle>  patch_facets;
-      std::vector<Vertex_handle> patch_vertices;
-      bool success = CGAL::cpp11::get<0>(
-        CGAL::Polygon_mesh_processing::triangulate_refine_and_fair_hole(
-                  poly,
-                  h,
-                  std::back_inserter(patch_facets),
-                  std::back_inserter(patch_vertices),
-     CGAL::Polygon_mesh_processing::parameters::vertex_point_map(get(CGAL::vertex_point, poly)).
-                  geom_traits(Kernel())) );
-      std::cout << " Number of facets in constructed patch: " << patch_facets.size() << std::endl;
-      std::cout << " Number of vertices in constructed patch: " << patch_vertices.size() << std::endl;
-      std::cout << " Fairing : " << (success ? "succeeded" : "failed") << std::endl;
-      ++nb_holes;
-    }
-  }
-  std::cout << std::endl;
-  std::cout << nb_holes << " holes have been filled" << std::endl;
-  return poly ;
-}
-
-
-
+//////////////// I/O ////////////////////
 std::vector<std::string> readparameters ( std::string filename )
 {
     std::vector<std::string> parameters ;
@@ -266,6 +142,243 @@ std::vector<std::string> readparameters ( std::string filename )
 
 }
 
+void savemesh ( Polyhedron poly, std::string savefile )
+{
+  std::cout << "Saving to: " << savefile << std::endl;;
+  std::ofstream out(savefile);
+  out.precision(17);
+  out << poly << std::endl;
+  out.close();
+}
+
+void createpath(std::string fullfile)
+{
+  std::string delimiter = "/";
+  std::vector<std::string> tokens;
+  size_t pos = 0;
+
+
+  std::string path = fullfile.substr(0, fullfile.find_last_of("\\/"));
+
+  fs::path dir(path);
+  if ( fs::create_directory(dir))
+  {
+  }
+
+}
+
+bool stob ( std::string truefalse )
+{
+  if ( truefalse == "true" || truefalse == "1")
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+bool check_unique ( const std::__1::array<size_t, 3UL> facet, std::vector<std::vector<int> > * set)
+{
+  std::vector < int > fset;
+  for ( size_t j = 0; j < 3; j++)
+  {
+    fset.push_back( facet[j] );
+  }
+  std::sort (fset.begin(), fset.end());
+  
+  bool check = true;
+  for (size_t i = 0; i < set->size(); i++)
+  {
+    std::vector<int> currentset = set->at( i );
+    if (fset == currentset)
+    {
+      check = false;
+      break;
+    }
+  }
+  if ( check == true )
+  {
+    set->push_back ( fset );
+  }
+
+  return check;
+}
+
+std::vector<Point> loadexact ( std::string fname )
+{
+  std::ifstream in ( fname ) ;
+  std::vector<Point> pointset;
+
+   std::copy(std::istream_iterator<Point>(in),
+            std::istream_iterator<Point>(),
+            std::back_inserter(pointset));
+  std::cout << "loaded pointset of size: " << pointset.size() << std::endl;
+  return pointset;
+}
+
+std::vector<Point_3> loadsimple ( std::string fname )
+{
+  std::ifstream in ( fname ) ;
+  std::vector<Point_3> pointset;
+
+   std::copy(std::istream_iterator<Point_3>(in),
+            std::istream_iterator<Point_3>(),
+            std::back_inserter(pointset));
+  std::cout << "loaded pointset of size: " << pointset.size() << " from file : " 
+  << fname
+  << std::endl;
+  return pointset;
+}
+
+Polyhedron offToPoly ( const char* filename )
+{
+  std::ifstream input(filename);
+  Polyhedron poly;
+  std::cout << "loading file: " << filename << std::endl;
+  if ( !input ) 
+  {
+    std::cerr << "No input" << std::endl;
+    exit ( 1 ) ;
+  }
+  else if ( !(input >> poly ) )
+  {
+    std::cerr << "couldn't load" << std::endl;
+    exit ( 1 ) ;
+  }
+  else if ( poly.empty() )
+  {
+    std::cerr << "poly is empty" << std::endl;
+    exit ( 1 ) ;
+  }
+  std::cout << "Loaded file. Vertices: " << poly.size_of_vertices() 
+            << " Facets: " << poly.size_of_facets() 
+            << " Half Edges: "  << poly.size_of_halfedges()
+            << " Border Edges: " << poly.size_of_border_edges() 
+            << std::endl;
+
+  return poly;
+}
+
+Polyhedron createPolyhedron ( Reconstruction recon )
+{
+
+ Polyhedron poly;
+ std::vector< Point > pointvector;
+  for ( Point_iterator pit = recon.points_begin(); pit != recon.points_end(); ++pit )
+  {
+    Point q ( pit[0][0], pit[0][1], pit[0][2]);
+    pointvector.push_back ( q );
+  }
+
+  for ( Facet_iterator it = recon.facets_begin( ); it != recon.facets_end(  ); ++it )
+  {
+    size_t i1 = it[0][0];
+    size_t i2 = it[0][1];
+    size_t i3 = it[0][2];
+    poly.make_triangle ( pointvector[i1], pointvector[i2], pointvector[i3] );
+  }
+
+  return poly;
+}
+
+Polyhedron createPolyhedron (std::vector<Point_3> points, std::vector<Facet> facets )
+{
+
+  Polyhedron poly;
+  std::vector< Point > pointvector;
+  for ( size_t pit = 0; pit < points.size(); pit++ )
+  {
+    Point q ( points[pit][0], points[pit][1], points[pit][2] );
+    pointvector.push_back ( q );
+  }
+
+  for ( size_t fit = 0; fit < facets.size(); fit++ )
+  {
+    size_t i1 = facets[fit][0];
+    size_t i2 = facets[fit][1];
+    size_t i3 = facets[fit][2];
+    poly.make_triangle ( pointvector[i1], pointvector[i2], pointvector[i3] );
+  }
+
+  return poly;
+}
+
+/////////////////// Mesh Generation //////////////////
+Polyhedron advancingFrontSurfaceReconstruction( std::vector<Point_3> points, Perimeter perimeter)
+{
+  std::vector<Facet> facets ;
+  CGAL::advancing_front_surface_reconstruction(points.begin(),
+                                               points.end(),
+                                               std::back_inserter(facets),
+                                               perimeter);
+   Polyhedron poly = createPolyhedron ( points, facets );
+
+  return poly;
+
+}
+
+Polyhedron scaleSpaceReconstruction ( std::vector<Point> points )
+{
+
+  CGAL::Timer t;
+  t.start();
+
+  // Construct the mesh in a scale space.
+  Reconstruction reconstruct (points.begin(), points.end());
+  reconstruct.increase_scale(4);
+  reconstruct.reconstruct_surface();
+
+  Polyhedron poly = createPolyhedron ( reconstruct );
+  
+  return poly;
+
+}
+
+
+///////////// Mesh Refinement /////////////////////
+Polyhedron fillholes ( Polyhedron poly )
+{
+  unsigned int nb_holes = 0;
+  BOOST_FOREACH(Halfedge_handle h, halfedges(poly))
+  {
+    if(h->is_border())
+    {
+      std::vector<Facet_handle>  patch_facets;
+      std::vector<Vertex_handle> patch_vertices;
+      bool success = CGAL::cpp11::get<0>(
+        CGAL::Polygon_mesh_processing::triangulate_refine_and_fair_hole(
+                  poly,
+                  h,
+                  std::back_inserter(patch_facets),
+                  std::back_inserter(patch_vertices),
+     CGAL::Polygon_mesh_processing::parameters::vertex_point_map(get(CGAL::vertex_point, poly)).
+                  geom_traits(Kernel())) );
+      std::cout << " Number of facets in constructed patch: " << patch_facets.size() << std::endl;
+      std::cout << " Number of vertices in constructed patch: " << patch_vertices.size() << std::endl;
+      std::cout << " Fairing : " << (success ? "succeeded" : "failed") << std::endl;
+      ++nb_holes;
+    }
+  }
+  std::cout << std::endl;
+  std::cout << nb_holes << " holes have been filled" << std::endl;
+  return poly ;
+}
+
+Polyhedron refinemesh ( Polyhedron poly )
+{
+  std::vector<Polyhedron::Facet_handle>  new_facets;
+  std::vector<Vertex_handle> new_vertices;
+  CGAL::Polygon_mesh_processing::refine(poly, faces(poly), 
+                  std::back_inserter(new_facets),
+                  std::back_inserter(new_vertices),
+                  CGAL::Polygon_mesh_processing::parameters::density_control_factor(2.));
+
+  std::cout << "Refinement added " << new_vertices.size() << " vertices." << std::endl;
+  return poly;
+}
+
 void extract_k_ring( Vertex_handle v, int k, std::vector<Vertex_handle>& qv )
 {
   std::map<Vertex_handle, int>  D;
@@ -286,25 +399,38 @@ void extract_k_ring( Vertex_handle v, int k, std::vector<Vertex_handle>& qv )
   }
 }
 
-void refinemesh ( Polyhedron poly )
+Polyhedron fair ( Polyhedron poly )
 {
-  std::vector<Polyhedron::Facet_handle>  new_facets;
-  std::vector<Vertex_handle> new_vertices;
-  CGAL::Polygon_mesh_processing::refine(poly, faces(poly), 
-                  std::back_inserter(new_facets),
-                  std::back_inserter(new_vertices),
-                  CGAL::Polygon_mesh_processing::parameters::density_control_factor(2.));
+  std::cout << "Begin Fairing" << std::endl;
 
-  std::cout << "Refinement added " << new_vertices.size() << " vertices." << std::endl;
-}
-void fair ( Polyhedron poly )
-{
+  std::cout << "Building vertex object" << std::endl;
   Polyhedron::Vertex_iterator v = poly.vertices_begin();
 
   std::advance(v, 82/*e.g.*/);
   std::vector<Vertex_handle> region;
+
+  std::cout << "Extracting k-ring" << std::endl;
   extract_k_ring(v, 12/*e.g.*/, region);
+  
   bool success = CGAL::Polygon_mesh_processing::fair(poly, region);
   std::cout << "Fairing : " << (success ? "succeeded" : "failed") << std::endl;
+
+  return poly;
+}
+
+C3t3 lloydOptimization ( Polyhedron poly, int f_angle =25, float f_size=0.15, float f_distance=0.008, int edge_ratio=3)
+{
+
+  Mesh_domain domain(poly);
+  Mesh_criteria criteria(facet_angle=f_angle, facet_size=f_size, facet_distance=f_distance, cell_radius_edge_ratio=edge_ratio);
+
+  std::cout << "Lloyd optimization begin" << std::endl;
+  C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria,
+                                      lloyd(time_limit=30),
+                                      no_perturb(),
+                                      exude(time_limit=10, sliver_bound=10));
+  std::cout << "done." << std::endl;
+
+  return c3t3;
 
 }
