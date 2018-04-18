@@ -1,0 +1,17 @@
+File: ../../data/moveHighTest/concatenated/concat1-200step10filtk100std0.8
+
+~Pre-processing~
+Downsample leafsize: 0.01
+noisefilter k: 0
+noisefilter std: 1.0
+
+~Clustering~
+Cluster Option: bottom up
+kernel type (if kmeans): radial
+Number of clusters: 10
+
+
+~Options~
+Show Cloud: true
+Save Cloud: true
+Save Directory: ../../data/moveHighTest/segments/hierarchical/

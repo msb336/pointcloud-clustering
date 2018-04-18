@@ -1,0 +1,9 @@
+File name: ../../data/simulated/cleansegments/
+Full Directory: true
+start: 2
+finish: 10
+Save location: ../../data/meshed/simulated/cleansegments/scaleRefineLloyd
+Mesh type: scale
+Refine: true
+Fairing: false
+Optimization: lloyd

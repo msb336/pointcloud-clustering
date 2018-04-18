@@ -1,0 +1,25 @@
+  File: ../../data/simulated/randomset0noise.xyz
+
+  ~Filtering~
+  Downsample leaf size: 0
+  Noise filter: false
+  Minimum neighbors: 50
+  Max standard deviation: 1
+
+  ~Clustering~
+  Cluster type: euclidean cluster
+  Max euclidean distance: 0.4
+  Minimum cluster points: 100
+  Maximum cluster points: 50000
+
+  ~Post-Segmentation Operations~
+  Post-seg downsampling: 0
+  Post-seg noise filter: false
+  Post-seg minimum neighbors: 100
+  Post-seg std: 1.0
+  
+  ~Options~
+  Save Segments: false
+  Save Location: ../../data/simulated/segments
+  Save filetype: .xyz
+  Visualize: true

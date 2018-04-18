@@ -1,0 +1,25 @@
+  File: ../../data/moveAngledTest/segments/xyz/concat1-100step5filtk50std1downsampled0.01/0.xyz
+
+  ~Filtering~
+  Downsample leaf size: 0
+  Noise filter: false
+  Minimum neighbors: 100
+  Max standard deviation: 0.5
+
+  ~Clustering~
+  Cluster type: sac
+  Max euclidean distance: 0.01
+  Minimum cluster points: 100
+  Maximum cluster points: 50000
+
+  ~Post-Segmentation Operations~
+  Post-seg downsampling: 0.01
+  Post-seg noise filter: false
+  Post-seg minimum neighbors: 100
+  Post-seg std: 1.0
+  
+  ~Options~
+  Save Segments: false
+  Save Location: ../../data/moveHighTest/segments/xyz/concat1-201step5filtk100std0.8planarsegmentation/
+  Save filetype: .xyz
+  Visualize: true

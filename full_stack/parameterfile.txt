@@ -1,0 +1,26 @@
+  ~File with good results ../../data/moveHighTest/concatenated/concat1-201step5filtk100std0.8
+  File: ../../data/moveAngledTest/concatenated/concat1-100step5filtk50std1downsampled0.01
+  ~Filtering~
+  Downsample leaf size: 0.01
+  Noise filter: true
+  Minimum neighbors: 100
+  Max standard deviation: 0.5
+
+  ~Clustering~
+  Cluster type: euclidean cluster
+  ~Max euclidean distance 0.01
+  Max euclidean distance: 0.03
+  Minimum cluster points: 2000
+  Maximum cluster points: 50000
+
+  ~Post-Segmentation Operations~
+  Post-seg downsampling: 0.0
+  Post-seg noise filter: true
+  Post-seg minimum neighbors: 50
+  Post-seg std: 1.0
+  
+  ~Options~
+  Save Segments: false
+  Save Location: ../../data/moveAngledTest/segments/xyz/concat1-100step5filtk50std1downsampled0.01/
+  Save filetype: .xyz
+  Visualize: true
