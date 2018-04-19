@@ -3,6 +3,7 @@ unsupervised/data/fusioncylinder.stl
 unsupervised/data/segment.stl
 unsupervised/data/segment2.stl
 data/*
+unsupervised/*
 matlab/*
 */build/*
 *.asv
