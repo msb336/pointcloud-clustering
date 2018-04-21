@@ -3,10 +3,12 @@
 
 #include <pcl/io/pcd_io.h>
 
+
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/filters/project_inliers.h>
+
 
 #include <pcl/features/normal_3d.h>
 
@@ -19,6 +21,7 @@
 #include <pcl/segmentation/extract_clusters.h>
 
 #include <pcl/visualization/cloud_viewer.h>
+
 #include <pcl/common/common.h>
 
 #include <boost/filesystem.hpp>
@@ -331,6 +334,7 @@ std::vector<colorCloud::Ptr> split(pointCloud::Ptr cloud,  std::vector<pcl::Poin
 
 }
 
+
 void visualize (std::vector<colorCloud::Ptr> segmented_clouds)
 {
 
@@ -403,6 +407,7 @@ void visualize ( pointCloud::Ptr cloud , bool height = false )
 
 }
 
+
 void noisefilter ( pointCloud::Ptr cloud, int k, float std)
 {
   // Create the filtering object
@@ -445,6 +450,7 @@ void downsample (colorCloud::Ptr cloud, float leafsize )
   vg.filter (*cloud);
   std::cout << "PointCloud after filtering has: " << cloud->points.size ()  << " data points." << std::endl;
 }
+
 
 colorCloud::Ptr projectPlane ( colorCloud::Ptr cloud, pcl::ModelCoefficients::Ptr coefficients )
 {
@@ -542,6 +548,7 @@ std::vector<colorCloud::Ptr>  euclideanCluster(pointCloud::Ptr cloud, float tole
   return segments;
 
 }
+
 
 std::vector<std::string> readparameters ( std::string filename )
 {

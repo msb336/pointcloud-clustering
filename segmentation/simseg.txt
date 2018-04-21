@@ -1,14 +1,14 @@
-  File: ../../data/simulated/randomset0noise.xyz
+  File: ../../data/simulated/cloudset.xyz
 
   ~Filtering~
-  Downsample leaf size: 0
-  Noise filter: false
+  Downsample leaf size: 5
+  Noise filter: true
   Minimum neighbors: 50
   Max standard deviation: 1
 
   ~Clustering~
   Cluster type: euclidean cluster
-  Max euclidean distance: 0.4
+  Max euclidean distance: 8
   Minimum cluster points: 100
   Maximum cluster points: 50000
 
@@ -19,7 +19,7 @@
   Post-seg std: 1.0
   
   ~Options~
-  Save Segments: false
-  Save Location: ../../data/simulated/segments
+  Save Segments: true
+  Save Location: ../../data/simulated/segments/cloudset/
   Save filetype: .xyz
-  Visualize: true
+  Visualize: false

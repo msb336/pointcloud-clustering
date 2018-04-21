@@ -1,9 +1,11 @@
-File name: ../../data/simulated/cleansegments/
-Full Directory: true
-start: 2
-finish: 10
-Save location: ../../data/meshed/simulated/cleansegments/scaleRefineLloyd
+File name: ../../data/simulated/emptybox.xyz
+Full Directory: false
+start: 0
+finish: 0
+Save location: ../../data/simulated/meshed/emptybox/emptybox
 Mesh type: scale
-Refine: true
+Hole fill: true
+Refine: false
+Density Control Factor: 5
 Fairing: false
-Optimization: lloyd
+Optimization: 

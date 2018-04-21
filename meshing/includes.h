@@ -179,32 +179,6 @@ bool stob ( std::string truefalse )
   }
 }
 
-bool check_unique ( const std::__1::array<size_t, 3UL> facet, std::vector<std::vector<int> > * set)
-{
-  std::vector < int > fset;
-  for ( size_t j = 0; j < 3; j++)
-  {
-    fset.push_back( facet[j] );
-  }
-  std::sort (fset.begin(), fset.end());
-  
-  bool check = true;
-  for (size_t i = 0; i < set->size(); i++)
-  {
-    std::vector<int> currentset = set->at( i );
-    if (fset == currentset)
-    {
-      check = false;
-      break;
-    }
-  }
-  if ( check == true )
-  {
-    set->push_back ( fset );
-  }
-
-  return check;
-}
 
 std::vector<Point> loadexact ( std::string fname )
 {
@@ -261,10 +235,12 @@ Polyhedron offToPoly ( const char* filename )
   return poly;
 }
 
+
 Polyhedron createPolyhedron ( Reconstruction recon )
 {
 
  Polyhedron poly;
+
  std::vector< Point > pointvector;
   for ( Point_iterator pit = recon.points_begin(); pit != recon.points_end(); ++pit )
   {
@@ -282,6 +258,7 @@ Polyhedron createPolyhedron ( Reconstruction recon )
 
   return poly;
 }
+
 
 Polyhedron createPolyhedron (std::vector<Point_3> points, std::vector<Facet> facets )
 {
@@ -338,45 +315,47 @@ Polyhedron scaleSpaceReconstruction ( std::vector<Point> points )
 
 
 ///////////// Mesh Refinement /////////////////////
-Polyhedron fillholes ( Polyhedron poly )
+void fillholes ( Polyhedron &poly , float density )
 {
+
   unsigned int nb_holes = 0;
+
+  std::cout << "Poly size before hole fill: " << poly.size_of_facets() << " " << poly.size_of_vertices() << std::endl;
   BOOST_FOREACH(Halfedge_handle h, halfedges(poly))
   {
     if(h->is_border())
     {
       std::vector<Facet_handle>  patch_facets;
       std::vector<Vertex_handle> patch_vertices;
+      
       bool success = CGAL::cpp11::get<0>(
         CGAL::Polygon_mesh_processing::triangulate_refine_and_fair_hole(
                   poly,
                   h,
                   std::back_inserter(patch_facets),
                   std::back_inserter(patch_vertices),
+
      CGAL::Polygon_mesh_processing::parameters::vertex_point_map(get(CGAL::vertex_point, poly)).
-                  geom_traits(Kernel())) );
-      std::cout << " Number of facets in constructed patch: " << patch_facets.size() << std::endl;
-      std::cout << " Number of vertices in constructed patch: " << patch_vertices.size() << std::endl;
-      std::cout << " Fairing : " << (success ? "succeeded" : "failed") << std::endl;
+                  density_control_factor ( density ) ) );
+                  
       ++nb_holes;
     }
   }
-  std::cout << std::endl;
-  std::cout << nb_holes << " holes have been filled" << std::endl;
-  return poly ;
+
+  std::cout << nb_holes << " holes have been filled. " << std::endl;
 }
 
-Polyhedron refinemesh ( Polyhedron poly )
+void refinemesh ( Polyhedron &poly, float density )
 {
   std::vector<Polyhedron::Facet_handle>  new_facets;
   std::vector<Vertex_handle> new_vertices;
   CGAL::Polygon_mesh_processing::refine(poly, faces(poly), 
                   std::back_inserter(new_facets),
                   std::back_inserter(new_vertices),
-                  CGAL::Polygon_mesh_processing::parameters::density_control_factor(2.));
+                  CGAL::Polygon_mesh_processing::parameters::density_control_factor(density));
 
   std::cout << "Refinement added " << new_vertices.size() << " vertices." << std::endl;
-  return poly;
+  // return poly;
 }
 
 void extract_k_ring( Vertex_handle v, int k, std::vector<Vertex_handle>& qv )
@@ -399,7 +378,7 @@ void extract_k_ring( Vertex_handle v, int k, std::vector<Vertex_handle>& qv )
   }
 }
 
-Polyhedron fair ( Polyhedron poly )
+void fair ( Polyhedron &poly )
 {
   std::cout << "Begin Fairing" << std::endl;
 
@@ -415,7 +394,7 @@ Polyhedron fair ( Polyhedron poly )
   bool success = CGAL::Polygon_mesh_processing::fair(poly, region);
   std::cout << "Fairing : " << (success ? "succeeded" : "failed") << std::endl;
 
-  return poly;
+  // return poly;
 }
 
 C3t3 lloydOptimization ( Polyhedron poly, int f_angle =25, float f_size=0.15, float f_distance=0.008, int edge_ratio=3)
