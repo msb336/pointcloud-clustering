@@ -19,7 +19,7 @@
   Post-seg std: 1.0
   
   ~Options~
-  Save Segments: true
+  Save Segments: false
   Save Location: ../../data/simulated/segments/cloudset/
   Save filetype: .xyz
-  Visualize: false
+  Visualize: true

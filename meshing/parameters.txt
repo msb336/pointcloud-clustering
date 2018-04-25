@@ -1,11 +1,22 @@
-File name: ../../data/simulated/emptybox.xyz
-Full Directory: false
+File name: ../../data/simulated/segments/cloudset/
+Full Directory: true
 start: 0
-finish: 0
-Save location: ../../data/simulated/meshed/emptybox/emptybox
-Mesh type: scale
+finish: 6
+Save location: ../../data/simulated/meshed/cloudset/
+Mesh type: advancedfront
 Hole fill: true
 Refine: false
-Density Control Factor: 5
+facet angle: 30
+facet size: 6
+facet distance: 2
+cell radius edge ratio: 3
+Density Control Factor: 8
 Fairing: false
-Optimization: 
+Lloyd Optimization: true
+Time Limit: 0
+Delaunay Optimization: true
+Time Limit: 0
+Perturbation: true
+Time Limit: 0
+Exudation: true
+Time Limit: 0

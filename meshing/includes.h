@@ -27,7 +27,7 @@
 #include <CGAL/Polyhedral_mesh_domain_3.h>
 #include <CGAL/make_mesh_3.h>
 #include <CGAL/refine_mesh_3.h>
-
+#define CGAL_MESH_3_VERBOSE 1
 
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
@@ -314,6 +314,7 @@ Polyhedron scaleSpaceReconstruction ( std::vector<Point> points )
 }
 
 
+
 ///////////// Mesh Refinement /////////////////////
 void fillholes ( Polyhedron &poly , float density )
 {
@@ -334,9 +335,9 @@ void fillholes ( Polyhedron &poly , float density )
                   h,
                   std::back_inserter(patch_facets),
                   std::back_inserter(patch_vertices),
-
-     CGAL::Polygon_mesh_processing::parameters::vertex_point_map(get(CGAL::vertex_point, poly)).
-                  density_control_factor ( density ) ) );
+      CGAL::Polygon_mesh_processing::parameters::vertex_point_map(get(CGAL::vertex_point, poly)).
+                  density_control_factor ( density ) ) 
+                                        );
                   
       ++nb_holes;
     }
@@ -394,21 +395,73 @@ void fair ( Polyhedron &poly )
   bool success = CGAL::Polygon_mesh_processing::fair(poly, region);
   std::cout << "Fairing : " << (success ? "succeeded" : "failed") << std::endl;
 
-  // return poly;
 }
 
-C3t3 lloydOptimization ( Polyhedron poly, int f_angle =25, float f_size=0.15, float f_distance=0.008, int edge_ratio=3)
+C3t3 highLevelMesh ( 
+                      Polyhedron poly, 
+                      std::vector<float> mesh_criteria, 
+                      std::vector<bool> mesh_parameters, 
+                      std::vector<float> time_limits,
+                      std::stringstream &title)
 {
 
   Mesh_domain domain(poly);
-  Mesh_criteria criteria(facet_angle=f_angle, facet_size=f_size, facet_distance=f_distance, cell_radius_edge_ratio=edge_ratio);
 
-  std::cout << "Lloyd optimization begin" << std::endl;
-  C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria,
-                                      lloyd(time_limit=30),
-                                      no_perturb(),
-                                      exude(time_limit=10, sliver_bound=10));
-  std::cout << "done." << std::endl;
+  std::cout << "Generating mesh criteria ....";
+  Mesh_criteria criteria (  
+                            facet_angle=mesh_criteria[0], 
+                            facet_size=mesh_criteria[1], 
+                            facet_distance=mesh_criteria[2], 
+                            cell_radius_edge_ratio=mesh_criteria[3]
+                          );
+  std::cout << "..........done"<<std::endl;
+
+
+
+  C3t3 c3t3;
+  if ( mesh_parameters[0] )
+  {
+    std::cout << "Mesh gen & lloyd optimization....." <<std::endl;
+    c3t3 = CGAL::make_mesh_3<C3t3>(
+                                        domain, criteria,
+                                        lloyd(time_limit=time_limits[0]),
+                                        no_perturb(),
+                                        no_exude ()
+                                      );
+    title << "lloyd" << time_limits[0];
+    std::cout<< "........done."<<std::endl;
+  }
+  else
+  {
+    std::cout << "Generating mesh........." << std::endl;
+    c3t3 = CGAL::make_mesh_3<C3t3> ( domain, criteria, time_limit = 10 );
+    std::cout << "               .............done" << std::endl;
+  }
+
+  if ( mesh_parameters[1] )
+  {
+    std::cout << "Delaunay Optimization....." <<std::endl;
+    CGAL::odt_optimize_mesh_3<C3t3> ( c3t3, domain, time_limit = time_limits[1] );
+    title << "odt" << time_limits[1];
+    std::cout<< "........done."<<std::endl;
+  }
+
+  if ( mesh_parameters[2] )
+  {
+    std::cout << "Perturbing....." <<std::endl;
+    CGAL::perturb_mesh_3<C3t3> ( c3t3, domain, time_limit = time_limits[2] );
+    title << "perturb" << time_limits[2];
+    std::cout<< "........done."<<std::endl;
+  }
+
+  if ( mesh_parameters[3] == true )
+  {
+    std::cout << "Exuding............"<<std::endl;
+    CGAL::exude_mesh_3<C3t3> ( c3t3, time_limit = time_limits[3] );
+    std::cout << "..............done" << std::endl;
+    title<< "exude" << time_limits[3];
+  }
+
 
   return c3t3;
 

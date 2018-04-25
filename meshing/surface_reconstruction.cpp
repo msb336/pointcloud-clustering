@@ -14,11 +14,29 @@ int main ( )
   std::string sname         =          parameters[4];
   std::string option        =          parameters[5];
 
-  bool hole_fill            =   stob ( parameters[6] );
-  bool refine               =   stob ( parameters[7] );
-  float densityControl      =   stof ( parameters[8] );
-  bool fairing              =   stob ( parameters[9] );
-  std::string optimization  =          parameters[10];
+  bool  hole_fill           =   stob ( parameters[6] );
+  bool  refine              =   stob ( parameters[7] );
+
+  std::vector<float> mesh_criteria;
+
+  for (int i = 8; i <= 11; i++)
+  {
+    mesh_criteria.push_back ( stof ( parameters[i]));
+    std::cout << parameters[i] << std::endl;
+  }
+
+  float densityControl      =   stof ( parameters[12] );
+  bool fairing              =   stob ( parameters[13] );
+  
+  std::vector<bool> mesh_operations;
+  std::vector<float> mesh_time_limits;
+  for ( int j = 14; j <=20; j+=2)
+  {
+    mesh_operations.push_back ( stob ( parameters[j] ) );
+    mesh_time_limits.push_back (stof( parameters[j+1]));
+  }
+
+
 
   int start = 0;        int finish = 0;
   if ( directory == true )
@@ -70,7 +88,7 @@ int main ( )
 
     if ( hole_fill == true )
     { 
-      saver << "Hole_fill";
+      saver << "Hole_fill" << densityControl;
       fillholes ( poly , densityControl );  
       std::cout << "Poly size after hole fill: " << poly.size_of_facets() << " " << poly.size_of_vertices() << std::endl;
     }
@@ -82,25 +100,19 @@ int main ( )
     { saver << "Fair";
       fair ( poly ); }
 
-    if ( optimization == "lloyd")
-    {
-        saver << "Lloyd" ;
-        C3t3 optimized = lloydOptimization ( poly, 25, 0.1 );
+      C3t3 optimized = highLevelMesh ( poly, 
+                                       mesh_criteria, 
+                                       mesh_operations, 
+                                       mesh_time_limits, 
+                                       saver 
+                                      );
 
-        // Output
-        std::cout << "Saving to .off file" << std::endl;
-        saver << ".off" ;
-        std::ofstream medit_file ( saver.str() );
-
-        optimized.output_boundary_to_off ( medit_file );
-
-    }
-    else
-    { 
-      saver << ".off" ;
+      // Output
       std::cout << "Saving to .off file" << std::endl;
-      savemesh ( poly, saver.str() ); 
-    }
+      saver << ".off" ;
+      std::ofstream medit_file ( saver.str() );
+
+      optimized.output_boundary_to_off ( medit_file );
 
 
   }
