@@ -1,22 +1,32 @@
-File name: ../../data/simulated/segments/cloudset/
-Full Directory: true
+File name: ../../data/simulated/highreslblock.xyz
+Full Directory: false
 start: 0
-finish: 6
-Save location: ../../data/simulated/meshed/cloudset/
+finish: 0
+Save location: ../../data/simulated/meshed/highreslblock
+
 Mesh type: advancedfront
-Hole fill: true
+
+Hole fill: false
 Refine: false
+
 facet angle: 30
-facet size: 6
-facet distance: 2
+facet size: 2
+facet distance: 1
 cell radius edge ratio: 3
+lloyd iterations: 200
+
 Density Control Factor: 8
 Fairing: false
-Lloyd Optimization: true
+
+Lloyd Optimization: false
 Time Limit: 0
-Delaunay Optimization: true
-Time Limit: 0
-Perturbation: true
-Time Limit: 0
-Exudation: true
-Time Limit: 0
+Delaunay Optimization: false
+Time Limit: 30
+Perturbation: false
+Time Limit: 30
+Exudation: false
+Time Limit: 30
+
+~Notes~
+Facet size modifies the minimum allowable facet area.
+Facet angle -> minimum facet angle

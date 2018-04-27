@@ -406,7 +406,7 @@ C3t3 highLevelMesh (
 {
 
   Mesh_domain domain(poly);
-
+  
   std::cout << "Generating mesh criteria ....";
   Mesh_criteria criteria (  
                             facet_angle=mesh_criteria[0], 
@@ -414,6 +414,25 @@ C3t3 highLevelMesh (
                             facet_distance=mesh_criteria[2], 
                             cell_radius_edge_ratio=mesh_criteria[3]
                           );
+  bool empty_criteria = true;
+  for ( int i = 0; i < mesh_criteria.size()-1; i++ )
+  {
+    if ( mesh_criteria[i] != 0 )
+      empty_criteria = false;
+      break;
+  }
+  if ( empty_criteria )
+  {
+    std::cout << "Empty mesh criteria......" << std::endl;
+    Mesh_criteria criteria ();
+  }
+  else
+  {
+    title << "facet_angle"<<mesh_criteria[0]<<"facet_size"<<mesh_criteria[1]<<"facet_distance"<<mesh_criteria[2]
+        <<"cell_radius_edge_ratio"<<mesh_criteria[3];   
+  }
+
+
   std::cout << "..........done"<<std::endl;
 
 
@@ -423,12 +442,18 @@ C3t3 highLevelMesh (
   {
     std::cout << "Mesh gen & lloyd optimization....." <<std::endl;
     c3t3 = CGAL::make_mesh_3<C3t3>(
-                                        domain, criteria,
-                                        lloyd(time_limit=time_limits[0]),
-                                        no_perturb(),
-                                        no_exude ()
-                                      );
-    title << "lloyd" << time_limits[0];
+                                    domain, criteria,
+
+                                    lloyd(time_limit=time_limits[0], 
+                                          max_iteration_number = mesh_criteria[4],
+                                          convergence = 0.001
+                                          ),
+
+                                    no_perturb(),
+                                    no_exude ()
+                                  );
+    title << "lloyd" << time_limits[0]<<"max_iter"<<mesh_criteria[4];
+
     std::cout<< "........done."<<std::endl;
   }
   else

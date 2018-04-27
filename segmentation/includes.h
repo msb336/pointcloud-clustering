@@ -403,8 +403,6 @@ void visualize ( pointCloud::Ptr cloud , bool height = false )
 
     visualize( singlecolored );
   }
-
-
 }
 
 

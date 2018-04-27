@@ -19,18 +19,18 @@ int main ( )
 
   std::vector<float> mesh_criteria;
 
-  for (int i = 8; i <= 11; i++)
+  for (int i = 8; i <= 12; i++)
   {
     mesh_criteria.push_back ( stof ( parameters[i]));
     std::cout << parameters[i] << std::endl;
   }
 
-  float densityControl      =   stof ( parameters[12] );
-  bool fairing              =   stob ( parameters[13] );
+  float densityControl      =   stof ( parameters[13] );
+  bool fairing              =   stob ( parameters[14] );
   
   std::vector<bool> mesh_operations;
   std::vector<float> mesh_time_limits;
-  for ( int j = 14; j <=20; j+=2)
+  for ( int j = 15; j <=21; j+=2)
   {
     mesh_operations.push_back ( stob ( parameters[j] ) );
     mesh_time_limits.push_back (stof( parameters[j+1]));
@@ -85,7 +85,7 @@ int main ( )
       std::vector<Point> pp = loadexact( loadfile );
       poly = scaleSpaceReconstruction ( pp );
     }
-
+    savemesh( poly, "testmesh.off" );
     if ( hole_fill == true )
     { 
       saver << "Hole_fill" << densityControl;
@@ -100,19 +100,19 @@ int main ( )
     { saver << "Fair";
       fair ( poly ); }
 
-      C3t3 optimized = highLevelMesh ( poly, 
-                                       mesh_criteria, 
-                                       mesh_operations, 
-                                       mesh_time_limits, 
-                                       saver 
-                                      );
+    C3t3 optimized = highLevelMesh ( poly, 
+                                     mesh_criteria, 
+                                     mesh_operations, 
+                                     mesh_time_limits, 
+                                     saver 
+                                    );
 
-      // Output
-      std::cout << "Saving to .off file" << std::endl;
-      saver << ".off" ;
-      std::ofstream medit_file ( saver.str() );
+    // Output
+    std::cout << "Saving to .off file" << std::endl;
+    saver << ".off" ;
+    std::ofstream medit_file ( saver.str() );
 
-      optimized.output_boundary_to_off ( medit_file );
+    optimized.output_boundary_to_off ( medit_file );
 
 
   }
