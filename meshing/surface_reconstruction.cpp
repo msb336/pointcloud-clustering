@@ -5,7 +5,6 @@ int main ( )
 {
   std::cout << CGAL_VERSION_NR << " (1MMmmb1000)" << std::endl;
 
-
   std::string parameterfile = "../parameters.txt" ;
   std::vector<std::string> parameters = readparameters (parameterfile) ;
 
@@ -13,24 +12,26 @@ int main ( )
   bool directory            =   stob ( parameters[1] );
   std::string sname         =          parameters[4];
   std::string option        =          parameters[5];
+  int   scale               =   stoi ( parameters[6] );
 
-  bool  hole_fill           =   stob ( parameters[6] );
-  bool  refine              =   stob ( parameters[7] );
+
+  bool  hole_fill           =   stob ( parameters[7] );
+  bool  refine              =   stob ( parameters[8] );
 
   std::vector<float> mesh_criteria;
 
-  for (int i = 8; i <= 12; i++)
+  for (int i = 9; i <= 13; i++)
   {
     mesh_criteria.push_back ( stof ( parameters[i]));
     std::cout << parameters[i] << std::endl;
   }
 
-  float densityControl      =   stof ( parameters[13] );
-  bool fairing              =   stob ( parameters[14] );
+  float densityControl      =   stof ( parameters[14] );
+  bool fairing              =   stob ( parameters[15] );
   
   std::vector<bool> mesh_operations;
   std::vector<float> mesh_time_limits;
-  for ( int j = 15; j <=21; j+=2)
+  for ( int j = 16; j <=22; j+=2)
   {
     mesh_operations.push_back ( stob ( parameters[j] ) );
     mesh_time_limits.push_back (stof( parameters[j+1]));
@@ -80,10 +81,10 @@ int main ( )
     }
     else
     {
-      saver << "Scalespace";
+      saver << "Scalespace" << scale;
       std::cout << "Scale Space Reconstruction" << std::endl;
       std::vector<Point> pp = loadexact( loadfile );
-      poly = scaleSpaceReconstruction ( pp );
+      poly = scaleSpaceReconstruction ( pp, scale );
     }
     savemesh( poly, "testmesh.off" );
     if ( hole_fill == true )

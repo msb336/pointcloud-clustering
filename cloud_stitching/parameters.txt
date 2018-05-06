@@ -1,10 +1,10 @@
-Directory: /Users/mattbrown/Desktop/Research/pcdfiles/moveangled/
-File prefix:
-Start index: 1
-End index: 100
-Step size: 5
-Noise filter: true
+Directory: ../../data/moveTestsCombined/
+File extension: .xyz
+Start index: 0
+End index: 1
+Step size: 1
+Noise filter: false
 Minimum neighbors: 50
 Max standard deviation: 1
-Downsample: 0.01;
-Save Location: ../../data/moveAngledTest/concatenated/
+Downsample: 0
+Save Location: ../../data/moveTestsCombined/angleStraight.pcd

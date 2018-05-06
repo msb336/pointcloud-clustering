@@ -15,6 +15,7 @@
 #include <pcl/registration/transforms.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/visualization/pcl_visualizer.h>
+#include "../segmentation/includes.h"
 
 using pcl::visualization::PointCloudColorHandlerGenericField;
 using pcl::visualization::PointCloudColorHandlerCustom;
@@ -67,7 +68,7 @@ public:
     out[3] = p.curvature;
   }
 };
-
+/*
 bool stob ( std::string truefalse )
 {
   if ( truefalse == "true" || truefalse == "1")
@@ -79,6 +80,7 @@ bool stob ( std::string truefalse )
     return false;
   }
 }
+*/
 
 void cloudfilter( PointCloud::Ptr cloud, float leafsize )
 {
@@ -92,7 +94,7 @@ void cloudfilter( PointCloud::Ptr cloud, float leafsize )
   std::cout << "PointCloud after filtering has: " << cloud->points.size ()  << " data points." << std::endl;
 
 }
-
+/*
 void downsample(PointCloud::Ptr cloud, float leafsize)
 {
   // Create the filtering object
@@ -104,20 +106,39 @@ void downsample(PointCloud::Ptr cloud, float leafsize)
 
 }
 
-void loadData (std::string directory, std::string prefix, int start, int finish, int stepsize, std::vector<PCD, Eigen::aligned_allocator<PCD> > &models)
+
+void get_filenames_from_dir ( const std::string _filename, const std::string ext, std::vector<std::string> &filenames )
 {
+      std::vector < std::string > fn;
+  glob ( _filename + "/*" + ext, fn, false);
+  for ( size_t i = 0; i < fn.size(); i ++ )
+  {
+    filenames.push_back ( fn[i] );
+  }
+}
+*/
+void loadData (std::string directory, 
+               std::string extension, 
+               std::vector<PCD, Eigen::aligned_allocator<PCD> > &models, 
+               int finish, int start=0, int stepsize=1)
+{
+
+std::cout << "loading data. " <<  "start: " << start << "finish: " << finish << std::endl;
   for (int i = start; i <= finish; i+=stepsize)
   {
     std::stringstream s;
-    s << i;
-    std::string loadfile = directory + prefix + s.str() + ".pcd";
+    s << directory << i << extension;
+    std::cout << "string name: ";
+    std::cout << s.str() << std::endl;
     PCD m;
-    m.f_name = loadfile;
-    pcl::io::loadPCDFile (loadfile, *m.cloud);
+    m.f_name = s.str();
+    // pcl::io::loadPCDFile (loadfile, *m.cloud);
+    m.cloud = loadcloud(s.str());
     models.push_back (m);
   }
+  std::cout << "done." << std::endl;
 }
-
+/*
 void noisefilter ( PointCloud::Ptr cloud, int k, float std)
 {
   // Create the filtering object
@@ -128,7 +149,7 @@ void noisefilter ( PointCloud::Ptr cloud, int k, float std)
   sor.filter (*cloud);
   std::cout << "Cloud now has: " << cloud->size() << " points\n" ;
 }
-
+*/
 void pairAlign (const PointCloud::Ptr cloud_src, const PointCloud::Ptr cloud_tgt, PointCloud::Ptr output, Eigen::Matrix4f &final_transform, bool downsample = false)
 {
   //
@@ -235,6 +256,7 @@ void pairAlign (const PointCloud::Ptr cloud_src, const PointCloud::Ptr cloud_tgt
   final_transform = targetToSource;
 }
 
+/*
 std::vector<std::string> readparameters ( std::string filename )
 {
     std::vector<std::string> parameters ;
@@ -266,3 +288,4 @@ std::vector<std::string> readparameters ( std::string filename )
     return parameters ;
 
 }
+*/

@@ -296,7 +296,7 @@ Polyhedron advancingFrontSurfaceReconstruction( std::vector<Point_3> points, Per
 
 }
 
-Polyhedron scaleSpaceReconstruction ( std::vector<Point> points )
+Polyhedron scaleSpaceReconstruction ( std::vector<Point> points, int scale=4 )
 {
 
   CGAL::Timer t;
@@ -304,7 +304,7 @@ Polyhedron scaleSpaceReconstruction ( std::vector<Point> points )
 
   // Construct the mesh in a scale space.
   Reconstruction reconstruct (points.begin(), points.end());
-  reconstruct.increase_scale(4);
+  reconstruct.increase_scale(scale);
   reconstruct.reconstruct_surface();
 
   Polyhedron poly = createPolyhedron ( reconstruct );

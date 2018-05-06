@@ -39,6 +39,7 @@ int main ( int argc, char** argv )
 
   if ( vis == true)
     visualize ( cloud, true ) ;
+    
 
 
 

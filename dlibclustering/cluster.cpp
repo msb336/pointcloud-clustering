@@ -57,7 +57,9 @@ int main (  )
         }
 
         std::vector<unsigned long> labels;
+        std::cout << "bottom up cluster begin" << std::endl;
         bottom_up_cluster ( dists, labels,  num_clust );
+        std::cout << "bottom up cluster end" << std::endl;
         
         int num_clusters = 0;
         pcl::PointIndices index;

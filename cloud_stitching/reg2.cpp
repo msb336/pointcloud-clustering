@@ -7,7 +7,7 @@ int main ( )
   std::vector<std::string> parameters = readparameters("../parameters.txt");
 
   std::string directory   =   parameters[0];
-  std::string prefix      =   parameters[1];
+  std::string extension      =   parameters[1];
   int start               =   stoi ( parameters[2] );
   int finish              =   stoi ( parameters[3] );
   int stepsize            =   stoi ( parameters[4] );
@@ -22,13 +22,14 @@ int main ( )
 
   std::vector<PCD, Eigen::aligned_allocator<PCD> > data;
 
-  loadData(directory, prefix, start, finish, stepsize, data);
+  loadData(directory, extension, data, finish, start, stepsize);
 
   // Check user input
   if ( data.empty () )
   {
     PCL_ERROR ("No Data\n");
   }
+
   PCL_INFO ("Loaded %d datasets.\n", (int)data.size ());
   
 
@@ -46,6 +47,7 @@ int main ( )
     if ( i == 1 )
     {
       source = data[i-1].cloud;
+      total = source;
       if ( noise_filter == true )
         noisefilter ( source, k, std );
     }
@@ -74,19 +76,17 @@ int main ( )
   }
 
   std::stringstream path;
-  path << saveloc << "concat" << start << "-" << finish << "step" << stepsize;
-  if ( noise_filter == true )
-    path << "filtk" << k << "std" << std;
+  path << saveloc;
+
+
   fs::path dir ( saveloc );
   if ( fs::create_directory(dir))
   {
   }
-  pcl::io::savePCDFile(path.str() , *total);
+  pcl::io::savePCDFile(saveloc , *total);
 
   if ( leafsize > 0)
   {
     downsample(total, leafsize) ;
   }
-  path << "downsampled" << leafsize ;
-  pcl::io::savePCDFile ( path.str(), *total );
 }

@@ -164,6 +164,13 @@ pointCloud::Ptr loadcloud(std::string loadfile)
     return newcloud;
 }
 
+
+void writetoPCD(std::stringstream ss, colorCloud::Ptr cloud)
+{
+  pcl::PCDWriter writer;
+  writer.write<pcl::PointXYZRGB> (ss.str (), *cloud, false);
+}
+
 void writetoPCD(std::stringstream ss, pointCloud::Ptr cloud)
 {
   pcl::PCDWriter writer;
@@ -185,6 +192,7 @@ void writetoPCD (std::string directory, std::vector<colorCloud::Ptr> cloudvector
   }
   std::cout << "Wrote " << cloudvector.size() << " to folder " << directory << "\n";
 }
+
 void writetoXYZ ( std::string directory, std::vector<colorCloud::Ptr> cloudvector )
 {
   mkdir( directory );
@@ -208,11 +216,6 @@ void writetoXYZ ( std::string directory, std::vector<colorCloud::Ptr> cloudvecto
 
 }
 
-void writetoPCD(std::stringstream ss, colorCloud::Ptr cloud)
-{
-  pcl::PCDWriter writer;
-  writer.write<pcl::PointXYZRGB> (ss.str (), *cloud, false);
-}
 
 int32_t castColor(std::vector<int> colorvec)
 {
@@ -339,7 +342,7 @@ void visualize (std::vector<colorCloud::Ptr> segmented_clouds)
 {
 
   boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
-  viewer->setBackgroundColor (0, 0, 0);
+  viewer->setBackgroundColor (255, 255, 255);
 
   for (int numclouds = 0; numclouds < segmented_clouds.size(); numclouds++)
   {

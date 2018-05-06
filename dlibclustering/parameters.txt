@@ -1,17 +1,17 @@
-File: ../../data/moveHighTest/concatenated/concat1-200step10filtk100std0.8
+File: ../../data/2d_cluster_test/solid_circles.xyz
 
 ~Pre-processing~
-Downsample leafsize: 0.01
+Downsample leafsize: 0
 noisefilter k: 0
-noisefilter std: 1.0
+noisefilter std: 0
 
 ~Clustering~
-Cluster Option: bottom up
+Cluster Option: bottomup
 kernel type (if kmeans): radial
-Number of clusters: 10
+Number of clusters: 3
 
 
 ~Options~
 Show Cloud: true
-Save Cloud: true
-Save Directory: ../../data/moveHighTest/segments/hierarchical/
+Save Cloud: false
+Save Directory: 
