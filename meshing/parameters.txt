@@ -1,13 +1,13 @@
-File name: ../../data/moveHighTest/segments/concat1-201step5filtk100std0.8/0adjusted.xyz
+File name: ../../data/simulated/fake-beam-scans/segmented-0noise/0.xyz
 Full Directory: false
 start: 0
 finish: 0
-Save location: ../../data/moveHighTest/meshed/concat1-201step5filtk100std0.8/0adjusted
+Save location: ../../data/simulated/meshed/
 
-Mesh type: advancedfront
-Scale space: 10
+Mesh type: scale
+Scale space: 15
 
-Hole fill: true
+Hole fill: false
 Refine: false
 
 facet angle: 15
@@ -23,9 +23,9 @@ Lloyd Optimization: false
 Time Limit: 0
 Delaunay Optimization: false
 Time Limit: 30
-Perturbation: true
+Perturbation: false
 Time Limit: 0
-Exudation: true
+Exudation: false
 Time Limit: 0
 
 ~Notes~

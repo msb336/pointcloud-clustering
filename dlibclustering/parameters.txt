@@ -1,17 +1,17 @@
-File: ../../data/2d_cluster_test/solid_circles.xyz
+File: ../../data/simulated/fake-beam-scans/simulated-beam-0noise.xyz
 
 ~Pre-processing~
-Downsample leafsize: 0
-noisefilter k: 0
-noisefilter std: 0
+Downsample leafsize: 0.3
+noisefilter k: 15
+noisefilter std: 1
 
 ~Clustering~
-Cluster Option: bottomup
+Cluster Option: kmeans
 kernel type (if kmeans): radial
-Number of clusters: 3
+Number of clusters: 17
 
 
 ~Options~
 Show Cloud: true
 Save Cloud: false
-Save Directory: 
+Save Directory: ../../data/simulated/fake-beam-scans/segmented-0noise/kmeans

@@ -1,6 +1,6 @@
-  File: ../../data/2d_cluster_test/lines.xyz
+  File: ../../data/simulated/fake-beam-scans/simulated-beam-2cmnoise.xyz
   ~Filtering~
-  Downsample leaf size: 0
+  Downsample leaf size: 0.1
   Noise filter: true
   Minimum neighbors: 15
   Max standard deviation: 1
@@ -8,8 +8,8 @@
   ~Clustering~
   Cluster type: euclidean cluster
   ~Max euclidean distance 0.5
-  Max euclidean distance: 1
-  Minimum cluster points: 0
+  Max euclidean distance: 0.5
+  Minimum cluster points: 3000
   Maximum cluster points: 50000
 
   ~Post-Segmentation Operations~
@@ -20,8 +20,6 @@
   
   ~Options~
   Save Segments: false
-  Save Location: ../../data/simulated/fake-beam-scans/segmented-0noise/
+  Save Location: ../../data/simulated/fake-beam-scans/segmented-2cmnoise/
   Save filetype: .xyz
   Visualize: true
-
-  Right now my beam is too close to the plane. probably going to have to re-do it with the beam being further away

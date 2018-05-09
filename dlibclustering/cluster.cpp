@@ -25,17 +25,21 @@ int main (  )
     pointCloud::Ptr cloud = loadcloud ( filename );
     std::cout << "Loaded cloud with : " << cloud->points.size() << " points" << std::endl;
     
-    std::vector<pcl::PointIndices> cluster_idx ;
 
-    if ( leafsize > 0 )
-        downsample ( cloud, leafsize);
+    std::vector<pcl::PointIndices> cluster_idx;
+
+
     if ( noise_neighbors > 0 )
         noisefilter ( cloud, noise_neighbors, noise_std );
+    if ( leafsize > 0 )
+        downsample ( cloud, leafsize);
     
     if ( cluster_option == "kmeans")
     {  
+        std::cout << "converting to matrix vector" << std::endl;
         std::vector<pointMatrix> pMat = pclToMatrixVector ( cloud );
-        cluster_idx = kmeans ( pMat, kernel, num_clust );
+        std::cout << "kmeans indexing" << std::endl;
+        kmeans ( cluster_idx, pMat, kernel, num_clust );
         
     }
     else if ( cluster_option == "bottomup")

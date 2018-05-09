@@ -36,7 +36,7 @@ std::vector<pointMatrix> pclToMatrixVector ( pointCloud::Ptr cloud )
 }
 
 
-std::vector<pcl::PointIndices> kmeans ( std::vector<pointMatrix> samples, std::string kernel, int num_clusters )
+void kmeans (std::vector<pcl::PointIndices> &cluster_index, std::vector<pointMatrix> samples, std::string kernel, int num_clusters )
 {
     typedef sigmoid_kernel<pointMatrix> sigkernel;
     typedef radial_basis_kernel<pointMatrix> radialkernel;
@@ -44,7 +44,6 @@ std::vector<pcl::PointIndices> kmeans ( std::vector<pointMatrix> samples, std::s
     if ( kernel == "sigmoid")
     {
         kcentroid<sigkernel> kc(sigkernel(), 0.01, 5);
-
     }
     else
     {
@@ -58,17 +57,20 @@ std::vector<pcl::PointIndices> kmeans ( std::vector<pointMatrix> samples, std::s
 
    cout << "Number of points: " << samples.size() << endl;
 
-    std::vector<pcl::PointIndices> cluster_index;
     std::vector<unsigned long> assignments;
+
+    std::cout << "set unsigned long assignments " << std::endl;
     if ( kernel == "sigmoid")
     {
         assignments = spectral_cluster(sigkernel(), samples, num_clusters);
     }
     else
     {
+        std::cout << "spectral clustering" << std::endl;
         assignments = spectral_cluster(radialkernel(0.1), samples, num_clusters);
     }
 
+    std::cout << "indexing the clusters" << std::endl;
     for ( size_t list = 0; list < num_clusters; list++ )
     {
         pcl::PointIndices index;
@@ -79,8 +81,6 @@ std::vector<pcl::PointIndices> kmeans ( std::vector<pointMatrix> samples, std::s
     {
         cluster_index[assignments[i]].indices.push_back ( i );
     }
-    
-    return cluster_index;
 }
 
 
