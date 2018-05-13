@@ -1,32 +1,33 @@
-File name: ../../data/simulated/fake-beam-scans/segmented-0noise/0.xyz
+File name: ../../data/moveHighTest/segments/concat1-201step5filtk100std0.8/0adjusted.xyz
 Full Directory: false
+
 start: 0
 finish: 0
-Save location: ../../data/simulated/meshed/
+Save location: ../../data/moveHighTest/meshed/concat
 
-Mesh type: scale
-Scale space: 15
+Mesh type: scalespace
+Scale space: 4
 
 Hole fill: false
 Refine: false
 
 facet angle: 15
-facet size: 0.25
-facet distance: 0.05
+facet size: 0.15
+facet distance: 0.02
 cell radius edge ratio: 3
 lloyd iterations: 200
 
 Density Control Factor: 3
 Fairing: false
 
-Lloyd Optimization: false
+Lloyd Optimization: true
 Time Limit: 0
 Delaunay Optimization: false
 Time Limit: 30
-Perturbation: false
-Time Limit: 0
-Exudation: false
-Time Limit: 0
+Perturbation: true
+Time Limit: 30
+Exudation: true
+Time Limit: 30
 
 ~Notes~
 Facet size modifies the minimum allowable facet area.

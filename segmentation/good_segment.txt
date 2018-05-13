@@ -1,5 +1,6 @@
   File with good results ../../data/moveHighTest/concatenated/concat1-201step5filtk100std0.8
-  ~File: ../../data/moveAngledTest/concatenated/concat1-100step5filtk50std1downsampled0.01
+  File: ../../data/moveAngledTest/concatenated/concat1-100step5filtk50std1downsampled0.01
+
   ~Filtering~
   Downsample leaf size: 0.01
   Noise filter: true

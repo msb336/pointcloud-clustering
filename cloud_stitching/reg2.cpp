@@ -47,8 +47,8 @@ int main ( )
     if ( i == 1 )
     {
       source = data[i-1].cloud;
-      total = source;
-      if ( noise_filter == true )
+      *total += *source;
+      if ( noise_filter )
         noisefilter ( source, k, std );
     }
     else

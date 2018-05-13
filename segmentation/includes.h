@@ -35,6 +35,7 @@
 
 typedef pcl::PointCloud<pcl::PointXYZ> pointCloud;
 typedef pcl::PointCloud<pcl::PointXYZRGB> colorCloud;
+
 namespace fs = ::boost::filesystem;
 
 
@@ -363,7 +364,7 @@ void visualize (std::vector<colorCloud::Ptr> segmented_clouds)
   }
 }
 
-void visualize ( pointCloud::Ptr cloud , bool height = false )
+void visualize ( pointCloud::Ptr cloud , bool height = false, bool normals = false )
 {
   if ( height == false )
   {
@@ -465,7 +466,7 @@ colorCloud::Ptr projectPlane ( colorCloud::Ptr cloud, pcl::ModelCoefficients::Pt
 
 }
 
-std::vector<colorCloud::Ptr> sacSegmentation ( pointCloud::Ptr cloud,  float distance, int mininum )
+std::vector<colorCloud::Ptr> sacSegmentation ( pointCloud::Ptr cloud,  float distance, int mininum, bool biggest=false )
 {
 
   std::vector<pcl::PointIndices> plane_indices;
@@ -526,6 +527,8 @@ std::vector<colorCloud::Ptr> sacSegmentation ( pointCloud::Ptr cloud,  float dis
 
     colorCloud::Ptr projected = projectPlane ( plane, coefficients );
     segments.push_back ( projected ) ;
+    if ( biggest == true )
+      break;
 
   }
 

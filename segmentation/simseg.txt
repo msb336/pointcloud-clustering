@@ -13,13 +13,13 @@
   Maximum cluster points: 50000
 
   ~Post-Segmentation Operations~
-  Post-seg downsampling: 0
-  Post-seg noise filter: false
-  Post-seg minimum neighbors: 0
-  Post-seg std: 0
+  Post-seg downsampling: 0.2
+  Post-seg noise filter: true
+  Post-seg minimum neighbors: 15
+  Post-seg std: 0.5
   
   ~Options~
-  Save Segments: false
+  Save Segments: true
   Save Location: ../../data/simulated/fake-beam-scans/segmented-2cmnoise/
   Save filetype: .xyz
   Visualize: true
