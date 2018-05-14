@@ -5,6 +5,9 @@ typedef pcl::PointCloud<pcl::PointNormal> pointNormal;
 
 struct lbeam
 {
+  float relative_theta;
+  float relative_phi;
+
 	float t;
 	float l;
 	float h;
@@ -16,7 +19,41 @@ struct lbeam
 	float w_certainty;
 };
 
-lbeam fit_beam ( cloud )
+pcl::ModelCoefficients::Ptr getPlane ( pointCloud::Ptr cloud,  float distance )
+{
+
+  pcl::ExtractIndices<pcl::PointXYZ> extract;
+  pcl::SACSegmentation<pcl::PointXYZ> seg;
+  
+  seg.setOptimizeCoefficients (true);
+  seg.setModelType (pcl::SACMODEL_PLANE);
+  seg.setMethodType (pcl::SAC_RANSAC);
+  seg.setDistanceThreshold ( distance );
+
+    pcl::ModelCoefficients::Ptr coefficients ( new pcl::ModelCoefficients );
+    pcl::PointIndices::Ptr inliers ( new pcl::PointIndices );
+
+    seg.setInputCloud ( cloud );
+    seg.segment ( *inliers, *coefficients );
+    coefficients->values.resize (4) ;
+
+  return coefficients;
+}
+
+
+void fit_beam ( pointCloud::Ptr cloud , lbeam &beamModel)
+{
+  pcl::ModelCoefficients::Ptr planeModel = getPlane ( cloud, 0.1 );
+
+  std::cout << "Plane Model Coefficients" << std::endl;
+  for (int i = 0; i < 4; i ++)
+  {
+    std::cout << planeModel->values[i] <<   " ";
+  }
+  std::cout << std::endl;
+}
+
+
 
 
 void visualize ( pointCloud::Ptr cloud , Normals::Ptr normals)
@@ -47,6 +84,7 @@ int main ( int argc, char** argv)
   float tolerance			=	stof ( parameters[2] );
   int 	minclust 			= 	1;
   pointCloud::Ptr cloud 	= 	loadcloud ( fullfile );
+  /*
   // Create the normal estimation class, and pass the input dataset to it
   pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
   ne.setInputCloud (cloud);
@@ -74,6 +112,12 @@ int main ( int argc, char** argv)
   visualize ( segments );
   pointNormal::Ptr cloudNormals ( new pointNormal );
   pcl::concatenateFields(*cloud, *cloud_normals, *cloudNormals);
+  */
+
+ lbeam beamModel;
+
+ fit_beam( cloud, beamModel );
+
 
   return 0;
 }
