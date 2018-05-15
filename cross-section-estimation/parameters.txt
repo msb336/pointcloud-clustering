@@ -1,3 +1,2 @@
-File name: ../../data/simulated/fake-beam-scans/segmented-0noise/0.xyz
-search radius: 0.2
+File name: ../../data/simulated/polygontest.xyz
 tolerance: 0.1
