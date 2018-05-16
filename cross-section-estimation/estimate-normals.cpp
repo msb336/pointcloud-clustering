@@ -5,16 +5,17 @@ void newtonRaphson ( float &cost, Polygon &polygon, pointCloud &pointset , float
   pointCloud temp = pointset;
   float del = 10000;
   float prevdel = 0;
-
-  while ( (del > tolerance) )
+  float oldcost = 10000;
+  while ( (del > tolerance) && (abs(del - prevdel) > 0.5) ) 
   {
-    float oldcost = cost;
+    
     costfunction ( cost, polygon, pointset, temp);
     std::cout << "Move cost: " << cost << std::endl;
 
     prevdel = del;
     del = polygon.rewrite ( cost, oldcost );
-    std::cout << del << " " << tolerance << std::endl;
+    float oldcost = cost;
+    std::cout << del << " " << prevdel << " "  << tolerance << std::endl;
   }
   pointset = temp;
 }
@@ -40,7 +41,7 @@ int main ( int argc, char** argv)
   /*    Our goal here to is to find the optimal beam cross-section parameters that minimize 
         the amount of distance traversed by the points within range of the cross-section plane
   */ 
-  visualize ( cloud );
+  // visualize ( cloud );
   std::cout << "Moving points to polygon and calculating cost " << std::endl;
     pointsnearplane ( poly, *cloud, *tempcloud, tolerance);
     std::cout << "cloud size: " << cloud->points.size() << " temp cloud size: " << tempcloud->points.size() <<std::endl;
