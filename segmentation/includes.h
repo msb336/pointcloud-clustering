@@ -194,7 +194,8 @@ void writetoPCD (std::string directory, std::vector<colorCloud::Ptr> cloudvector
   std::cout << "Wrote " << cloudvector.size() << " to folder " << directory << "\n";
 }
 
-void writetoXYZ ( std::string directory, std::vector<colorCloud::Ptr> cloudvector )
+template<typename T>
+void writetoXYZ ( std::string directory, std::vector<T> cloudvector )
 {
   mkdir( directory );
   for (int i = 0; i < cloudvector.size(); i++)

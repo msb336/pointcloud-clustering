@@ -1,3 +1,4 @@
-File name: ../../data/simulated/plane.xyz
-tolerance: 0.1
-del tol: 5
+File name: noisyplane.xyz
+plane tolerance: 0.1
+cost tolerance: 30
+diff tolerance: 1
