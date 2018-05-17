@@ -1,31 +1,37 @@
 #include "includes.h"
-
-bool newtonsimple ( float cost, float &oldcost, Polygon &p, float tolerance = 0.1 )
+// HAVE A COST FUNCTION RELATIVE TO EACH LENGTH!!!
+bool newtonsimple ( std::vector<float> cost, std::vector<float> &oldcost, Polygon &p, float tolerance = 0.1 )
 {
-	float dcost = cost - oldcost;
-	oldcost = cost;
+	std::vector<float> dcost;
+	for (int i = 0; i < cost.size(); i++)
+	{
+		dcost.push_back(cost[i] - oldcost[i]);
+		oldcost[i] = cost[i];
+	}
+
   
 	float dw = p.width - p.oldwidth;
 	p.oldwidth = p.width;
-	p.width = p.width - 0.01*cost*dw/dcost;
+	p.width = p.width - 0.1*cost[1]*dw/dcost[1];
 
 	float dh = p.height - p.oldheight;
 	p.oldheight = p.height;
-	p.height = p.height - 0.01*cost*dh/dcost;
+	p.height = p.height - 0.1*cost[2]*dh/dcost[2];
   
 	float dt = p.thickness - p.oldthickness;
 	p.oldthickness = p.thickness;
-	p.thickness = p.thickness - 0.01*cost*dt/dcost;
+	p.thickness = p.thickness - 0.01*cost[3]*dt/dcost[3];
 	p.calculatePositions();
 
-	float del = sqrt ( dt*dt ); //+ dw*dw + dh*dh );
+	float del = sqrt ( dw*dw ); //+ dh*dh ); // + dt*dt);
 	return ( del < tolerance ); 
 	
 }
 
-void modcost( float &cost, Polygon &simple, pointCloud cloud, pointCloud &projected)
+void modcost( std::vector<float> &cost, Polygon &simple, pointCloud cloud, pointCloud &projected)
 {
-	cost = 0;
+	for (int i = 0; i< cost.size(); i++)
+		cost[i] = 0;
 	for (int i = 0; i < cloud.size(); i++)
 	projectToPolygon ( cost, simple, cloud[i], projected[i]);
 }
@@ -69,10 +75,16 @@ int main ( )
 	pointCloud::Ptr projectedcloud ( new pointCloud );
 	*projectedcloud += *testcloud;
 	
-    float cost;
-    float oldcost = 5;
+    
+    std::vector<float> oldcost;
+	for ( int i = 0; i < 3; i ++)
+		oldcost.push_back(5);
+	std::vector<float> cost = oldcost;
+
+
     bool dif = true;
     bool max = true;
+
     pointCloud::Ptr vertexcloud ( new pointCloud);
     std::vector<pointCloud::Ptr> clouds;
     while ( dif && max)
@@ -82,13 +94,14 @@ int main ( )
     	poly.makeCloud();
     	vertexcloud->points.clear();
     	*vertexcloud+=poly.vertices;
-    	std::cout << "cost: " << cost << " width: " << poly.width << " height: " << poly.height << " thickness: " << poly.thickness << std::endl;
+    	std::cout << "\n\n\n\n\ncost: " << cost[0] << " " << cost[1] << " " << cost[2] << " width: " << poly.width << " height: " << poly.height << " thickness: " << poly.thickness << "\n\n\n\n\n" <<std::endl;
     	clouds.clear();
     	clouds.push_back(testcloud);
     	clouds.push_back (vertexcloud);
     	visualize(clouds);
     	dif = !newtonsimple( cost, oldcost, poly, dif_tol );
-    	max = cost > cost_tol;
+		
+    	max = sqrt ( cost[0]*cost[0] + cost[1]*cost[1] + cost[2]*cost[2] ) > cost_tol;
     	
 
     }

@@ -344,7 +344,7 @@ bool inPoly( PointT p, std::vector<PointT> poly, PointT pflat, std::vector<Point
 
 
 ///////////////////////////////// Projecting Points to Polygon /////////////////////////////////////////////
-void projectToPolygon ( float &cost, Polygon &poly, PointT &oldp, PointT &newp )
+void projectToPolygon ( std::vector<float> &cost, Polygon &poly, PointT &oldp, PointT &newp )
 {
   int seg;
   float distance = 10000;
@@ -379,10 +379,8 @@ void projectToPolygon ( float &cost, Polygon &poly, PointT &oldp, PointT &newp )
 
     Eigen::Vector3f distance_vector = old_vector - projection;
     float newdist = distance_vector.norm();
-    cost+=newdist;
     if (newdist < distance )
     { 
-
       seg = i; 
       newp.x = projection[0]; newp.y = projection[1]; newp.z = projection[2];
         distance = newdist; 
@@ -391,6 +389,15 @@ void projectToPolygon ( float &cost, Polygon &poly, PointT &oldp, PointT &newp )
           break;
         }
     }
+    if ( seg == 0 )
+    { cost[1]+=distance;cost[2]+=distance;}
+    else if ( seg == 1)
+    {cost[0]+=distance;}
+    else if ( seg == 2 || seg == 3 || seg == 5 )
+    { cost[2]+=distance;}
+    else
+    { cost[1]+=distance;}
+
   }
 
   // cost+=distance;
@@ -415,12 +422,13 @@ void pointsnearplane ( Polygon poly, pointCloud &cloud, pointCloud &newcloud, fl
     {  newcloud.points.push_back(cloud.points[i]); }
   }
 }
-void costfunction ( float &cost, Polygon poly, pointCloud &cloud, pointCloud &newcloud, float tolerance = 0.02 )
-{
+void costfunction ( std::vector<float> &cost, Polygon poly, pointCloud &cloud, pointCloud &newcloud, float tolerance = 0.02 )
+{/*
   cost = 0;
   newcloud.points.clear(); PointT p;
   for ( int i =0; i < cloud.points.size(); i++ )
   { projectToPolygon ( cost, poly, cloud.points[i], p); newcloud.points.push_back(p);}
+  */
 }
 
 ///////////////////// Shape Modification /////////////////////////////////////////////
