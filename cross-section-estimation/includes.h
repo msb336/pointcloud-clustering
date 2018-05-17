@@ -1,8 +1,9 @@
 #include "../segmentation/includes.h"
 
 typedef pcl::PointCloud<pcl::Normal> Normals;
-typedef pcl::PointCloud<pcl::PointNormal> pointNormal;
+typedef pcl::PointCloud<pcl::PointNormal> NormalCloud;
 typedef pcl::PointXYZ PointT;
+typedef pcl::PointNormal PointN;
 float sign ( float number )
 {
   float ss;
@@ -56,15 +57,18 @@ class Polygon
     float height=0;
     float width=0;
     std::vector<linesegment> lines;
-    pointCloud vertices;
+    pointCloud::Ptr vertices;
+    std::vector<Eigen::Vector3f> normals;
 
     Polygon ( float, float, float,  Eigen::Vector3f, float, float );
+    Polygon ();
     void calculatePositions();
     void maxtest();
     void makeCloud();
     float rewrite ( float, float);
     void set ( float, float, float,  Eigen::Vector3f, float, float);
 };
+  Polygon::Polygon(){}
   void Polygon::calculatePositions ( )
   {
     Eigen::Transform<float,3, Eigen::Affine> trans1  ( Eigen::AngleAxisf ( theta, Eigen::Vector3f ( 1,0,0 ) ) );
@@ -80,13 +84,16 @@ class Polygon
     polyObject.push_back ( fulltrans*(placement + Eigen::Vector3f( 0, 0, height ) ) );
     // std::cout << "New Cross Section co-ordinates: \n";
     lines.clear();
+    normals.clear();
     for (int i = 0; i < polyObject.size(); i++)
     {
       // std::cout << "( " << polyObject[i][0] << " " << polyObject[i][1] << " " << polyObject[i][2] << " )\n";
       linesegment l;
       l.line  = polyObject[(i+1) % polyObject.size() ] - polyObject[i];
-      
-        // std::cout << "line between " << polyObject[i] << " and " << polyObject[i+1] << " is " << l.line << std::endl;
+      Eigen::Vector3f cross = l.line.cross(Eigen::Vector3f(0,-1,0));
+      normals.push_back( cross / cross.norm() );
+      // std::cout << normals[i] << std::endl;
+
       l.begin = polyObject[i];
       l.end   = polyObject[i+1];
       l.norm  = l.line.norm();
@@ -161,28 +168,29 @@ class Polygon
   }
   void Polygon::makeCloud()
   {
-    vertices.clear();
+    pointCloud::Ptr temp ( new pointCloud );
     // std::cout << "writing points" << std::endl;
     for (int i = 0; i < lines.size(); i++)
     {
       PointT p1 (lines[i].begin[0],lines[i].begin[1], lines[i].begin[2] );
-      vertices.push_back ( p1 );
+      temp->push_back ( p1 );
       PointT p2 (lines[i].end[0],lines[i].end[1], lines[i].end[2] );
-      vertices.push_back ( p2 );
+      temp->push_back ( p2 );
 
       for ( float j = 0.1; j < lines[i].norm; j += 0.1 )
       {
         // std::cout << j << std::endl;
         Eigen::Vector3f vecform = j*(lines[i].line / lines[i].norm) + lines[i].begin;
         PointT p (vecform[0], vecform[1], vecform[2] );
-        vertices.push_back ( p );
+        temp->push_back ( p );
       }
     }
     // std::cout << "done. " <<std::endl;
+    vertices = temp; 
   }
 
 
-
+///////////////////////// Find Points relevant to 2D plane /////////////////////////////////
 // Necessary
 void pointsToPlane( Eigen::Vector3f &a, Eigen::Vector3f &b, Eigen::Vector3f &c, const pcl::ModelCoefficients::Ptr &plane )
 {
@@ -193,218 +201,14 @@ void pointsToPlane( Eigen::Vector3f &a, Eigen::Vector3f &b, Eigen::Vector3f &c, 
 
   plane->values.resize(4);
 
-
-
-
   for ( size_t i = 0; i < plane->values.size(); i++ )
   {
     plane->values[i] = eigen_plane.coeffs()[i];
   }
 }
 
-Eigen::Transform<float,3, Eigen::Affine> rotateToOrigin ( pcl::ModelCoefficients:: Ptr &plane )
-{
-  Eigen::Vector3f cloud_plane_normal_vector;
-  cloud_plane_normal_vector[0] = plane->values[0];
-  cloud_plane_normal_vector[1] = plane->values[1];
-  cloud_plane_normal_vector[2] = plane->values[2];
-
-  Eigen::Vector3f xy_plane_normal_vector;
-  xy_plane_normal_vector[0] = 0;
-  xy_plane_normal_vector[1] = 0;
-  xy_plane_normal_vector[2] = 1;
-
-  Eigen::Vector3f rotation_vector = cloud_plane_normal_vector.cross (xy_plane_normal_vector);
-  Eigen::Vector3f transformVector;
-  float length=sqrt(rotation_vector[0]*rotation_vector[0]+rotation_vector[1]*rotation_vector[1]+rotation_vector[2]*rotation_vector[2]);
-
-  if ( length < 0.01 )
-  {
-    transformVector(0) = 0;
-    transformVector(1) = 0;
-    transformVector(2) = 0;
-  }
-  else
-  {
-    std::cout << "rotation vector " << rotation_vector << std::endl;
-    transformVector(0) = rotation_vector[0] / length;
-    transformVector(1) = rotation_vector[1] / length;
-    transformVector(2) = rotation_vector[2] / length;
-  }
-
-
-  std::cout << "transform vector " << transformVector << " length " << length << std::endl;
-
-  Eigen::Affine3f transformModel = Eigen::Affine3f::Identity();
-
-  float theta = -acos(cloud_plane_normal_vector[0]*xy_plane_normal_vector[0]+cloud_plane_normal_vector[1]*xy_plane_normal_vector[1]+cloud_plane_normal_vector[2]*xy_plane_normal_vector[2]);
-  transformModel.rotate (Eigen::AngleAxisf (theta, transformVector));
-
-  Eigen::Transform<float,3, Eigen::Affine> t (Eigen::AngleAxisf ( theta, transformVector) );
-  return t;
-
-}
-
-
-pcl::ModelCoefficients::Ptr getLargestPlane ( pointCloud::Ptr cloud,  float distance )
-{
-
-  pcl::ExtractIndices<PointT> extract;
-  pcl::SACSegmentation<PointT> seg;
-  
-  seg.setOptimizeCoefficients (true);
-  seg.setModelType (pcl::SACMODEL_PLANE);
-  seg.setMethodType (pcl::SAC_RANSAC);
-  seg.setDistanceThreshold ( distance );
-
-    pcl::ModelCoefficients::Ptr coefficients ( new pcl::ModelCoefficients );
-    pcl::PointIndices::Ptr inliers ( new pcl::PointIndices );
-
-    seg.setInputCloud ( cloud );
-    seg.segment ( *inliers, *coefficients );
-    coefficients->values.resize (4) ;
-
-  return coefficients;
-}
-
-
-///////////////////////////////////// Test if point inside polygon ////////////////////////////////////
-void calculateExtreme ( std::vector<PointT> poly, float &minX, float &maxX, float &minY, float &maxY )
-{
-  for (int i = 0; i < poly.size(); i++ )
-  {
-    if ( poly[i].x < minX )
-      minX = poly[i].x;
-    if ( poly[i].x > maxX )
-      maxX = poly[i].x;
-    if ( poly[i].y < minY )
-      minY = poly[i].y;
-    if ( poly[i].y > maxY )
-      maxY = poly[i].y;
-  }
-}
-
-bool simplePolyCheck( PointT p, float minX, float maxX, float minY, float maxY )
-{
-  std::cout << "simplePolyCheck of point " << p;
-  if ( p.x < minX || p.x > maxX || p.y < minY || p.y > maxY )
-  {
-    std::cout << " returned false" << std::endl;
-    return false;
-  }
-
-  else
-  {
-    std::cout << " returned true" << std::endl;
-    return true;
-  }
-
-
-}
-
-bool polygonTest ( std::vector<PointT> poly, PointT p, float tolerance = 0)
-{
-  bool c = false;
-  int i, j;
-  for ( i = 0, j = poly.size()-1; i < poly.size(); j=i++)
-  {
-    if ( ((poly[i].y > p.y) != (poly[j].y > p.y)) && 
-          (p.x < (poly[j].x - poly[i].x) * (p.y - poly[i].y) / (poly[j].y - poly[i].y) + poly[i].x) )
-      c = !c;
-  }
-  std::cout << "polygonTest of point " << p << " returned " << c <<std::endl;
-  return c;
-}
-
-PointT transformPoint (const PointT &point, const Eigen::Transform<float, 3, Eigen::Affine> &transform)
- {
-  //ret.getVector3fMap () = transform * point.getVector3fMap ();
-  PointT ret = point;
-  ret.x = static_cast<float> (transform (0, 0) * point.x + transform (0, 1) * point.y + transform (0, 2) * point.z + transform (0, 3));
-  ret.y = static_cast<float> (transform (1, 0) * point.x + transform (1, 1) * point.y + transform (1, 2) * point.z + transform (1, 3));
-  ret.z = static_cast<float> (transform (2, 0) * point.x + transform (2, 1) * point.y + transform (2, 2) * point.z + transform (2, 3));
-  return ret;
- }
-
-bool inPoly( PointT p, std::vector<PointT> poly, PointT pflat, std::vector<PointT> polyflat, float tolerance )
-{
-    float minX, maxX, minY, maxY;
-    calculateExtreme ( polyflat, minX, maxX, minY, maxY );
-    if ( !simplePolyCheck ( pflat, minX-tolerance, maxX+tolerance, minY-tolerance, maxY+tolerance) )
-    {
-      return false;
-    }
-    else
-    {
-      return polygonTest(polyflat, pflat, tolerance);
-    }
-}
-
-
-
-
-///////////////////////////////// Projecting Points to Polygon /////////////////////////////////////////////
-void projectToPolygon ( std::vector<float> &cost, Polygon &poly, PointT &oldp, PointT &newp )
-{
-  int seg;
-  float distance = 10000;
-  Eigen::Vector3f projection;
-  Eigen::Vector3f old_vector = oldp.getArray3fMap();
-  for ( int i =0; i < poly.lines.size(); i++ )
-  // for ( int i =2; i <=4; i+=2 )
-  {
-
-
-    Eigen::Vector3f pointvector =  old_vector - poly.lines[i].begin;
-    float dotproduct = pointvector.dot(poly.lines[i].line / poly.lines[i].norm);
-    projection = dotproduct * poly.lines[i].line / poly.lines[i].norm;
-    Eigen::Vector3f bdist = poly.lines[i].end - projection;
-
-    /*
-    if ( projection.norm() + bdist.norm() - poly.lines[i].norm <= 0.01 && dotproduct > 0)
-    {
-      projection = projection + poly.lines[i].begin;
-    }    
-    else if ( projection.norm() < bdist.norm() )
-    {
-      projection = poly.lines[i].begin;
-    }
-    else
-    {
-      projection = poly.lines[i].end;
-    }
-    */
-
-    projection += poly.lines[i].begin;
-
-    Eigen::Vector3f distance_vector = old_vector - projection;
-    float newdist = distance_vector.norm();
-    if (newdist < distance )
-    { 
-      seg = i; 
-      newp.x = projection[0]; newp.y = projection[1]; newp.z = projection[2];
-        distance = newdist; 
-        if ( distance < 0.001 )
-        {
-          break;
-        }
-    }
-    if ( seg == 0 )
-    { cost[1]+=distance;cost[2]+=distance;}
-    else if ( seg == 1)
-    {cost[0]+=distance;}
-    else if ( seg == 2 || seg == 3 || seg == 5 )
-    { cost[2]+=distance;}
-    else
-    { cost[1]+=distance;}
-
-  }
-
-  // cost+=distance;
-  cost = cost ;
-}
-
-void pointsnearplane ( Polygon poly, pointCloud &cloud, pointCloud &newcloud, float tolerance = 0.02 )
+template<typename CloudType>
+void pointsnearplane ( Polygon poly, CloudType &cloud, CloudType &newcloud, float tolerance = 0.02 )
 { 
   newcloud.points.clear();
   std::vector<int> index;
@@ -422,16 +226,89 @@ void pointsnearplane ( Polygon poly, pointCloud &cloud, pointCloud &newcloud, fl
     {  newcloud.points.push_back(cloud.points[i]); }
   }
 }
-void costfunction ( std::vector<float> &cost, Polygon poly, pointCloud &cloud, pointCloud &newcloud, float tolerance = 0.02 )
-{/*
-  cost = 0;
-  newcloud.points.clear(); PointT p;
-  for ( int i =0; i < cloud.points.size(); i++ )
-  { projectToPolygon ( cost, poly, cloud.points[i], p); newcloud.points.push_back(p);}
-  */
+
+
+
+///////////////////////////////// Projecting Points to Polygon /////////////////////////////////////////////
+Eigen::Vector3f fitProjection (Eigen::Vector3f v, linesegment l, Eigen::Vector3f &projection)
+{
+    Eigen::Vector3f pointvector =  v - l.begin;
+    float dotproduct = pointvector.dot(l.line / l.norm);
+    // std::cout << "\n\n\n\n" << l.line << "\n\n" << l.line / l.norm <<  "\n\n\n\n\n" << std::endl;
+    projection = dotproduct * ( l.line / l.norm );
+    Eigen::Vector3f bdist = ( l.line - projection);
+
+    
+    if ( (projection.norm() + bdist.norm() - l.norm) <= 0.001)
+    {
+      projection = projection + l.begin;
+    }    
+    else if ( projection.norm() < bdist.norm() )
+    {
+      projection = l.begin;
+    }
+    else
+    {
+      projection = l.end;
+    }
+
+}
+void projectToPolygon ( std::vector<float> &cost, Polygon poly, PointN oldp, PointT &newp )
+{
+  float distance = 10000;
+  Eigen::Vector3f projection;
+  Eigen::Vector3f old_vector( oldp.x, oldp.y, oldp.z );
+  Eigen::Vector3f normal_vec ( oldp.normal_x, oldp.normal_y, oldp.normal_z );
+  Eigen::Vector3f dv ( 0,0,0 );
+  Eigen::Vector3f cross;
+  Eigen::Vector3f distance_vector (0,0,0);
+
+
+  for ( int i =0; i < poly.lines.size(); i++ )
+  {
+    cross = poly.normals[i].cross ( normal_vec / normal_vec.norm() );
+    std::cout << "cross product:" << "\n" << cross << "\n\n" << std::endl;
+
+    if (  cross.norm() < 0.1 || std::isnan(cross[0]))
+    {
+      fitProjection(old_vector, poly.lines[i], projection );
+      distance_vector = old_vector - projection;
+      float newdist = distance_vector.norm();
+      if (newdist < distance )
+      { 
+          newp.x = projection[0]; newp.y = projection[1]; newp.z = projection[2];
+          distance = newdist; 
+          dv = distance_vector;
+          if ( distance < 0.001 )
+          {
+            break;
+          }
+      }
+    }
+    cost[0] += dv[0]; cost[1] += dv[2];
+  } 
 }
 
-///////////////////// Shape Modification /////////////////////////////////////////////
+
+///////////// Normal calculations //////////////////
+
+void computenormals ( pointCloud::Ptr cloud, Normals &cloud_normals, NormalCloud &normalcloud, float rad=0.3 )
+{
+  pcl::NormalEstimation<PointT, pcl::Normal> normal_estimate;
+  normal_estimate.setInputCloud ( cloud );
+
+  pcl::search::KdTree<PointT>::Ptr tree ( new pcl::search::KdTree<PointT> () );
+  normal_estimate.setSearchMethod ( tree );
+
+  // Normals::Ptr cloud_normals ( new Normals );
+
+  normal_estimate.setRadiusSearch ( rad );
+
+  normal_estimate.compute ( cloud_normals );
+
+  pcl::concatenateFields ( *cloud, cloud_normals, normalcloud );
+
+}
 
 
 ////////////// Visualize cloud normals //////////////////////
@@ -455,6 +332,7 @@ void visualize ( std::vector<pointCloud::Ptr> cloudset )
       boost::this_thread::sleep (boost::posix_time::microseconds (100000));
     }
 }
+
 void visualize ( pointCloud::Ptr cloud , Normals::Ptr normals)
 {
 
@@ -462,6 +340,22 @@ void visualize ( pointCloud::Ptr cloud , Normals::Ptr normals)
     viewer->setBackgroundColor (0, 0, 0);
     viewer->addPointCloud<PointT> (cloud, "Single Cloud");
     viewer->addPointCloudNormals<PointT, pcl::Normal> (cloud, normals, 10, 0.5, "normals");
+    viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "Single Cloud");
+    viewer->addCoordinateSystem (1.0);
+    viewer->initCameraParameters ();
+    while (!viewer->wasStopped ())
+    {
+      viewer->spinOnce (100);
+      boost::this_thread::sleep (boost::posix_time::microseconds (100000));
+    }
+}
+
+void visualize ( NormalCloud::Ptr cloud)
+{
+
+    boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
+    viewer->setBackgroundColor (0, 0, 0);
+    viewer->addPointCloud<PointN> (cloud, "Single Cloud");
     viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "Single Cloud");
     viewer->addCoordinateSystem (1.0);
     viewer->initCameraParameters ();

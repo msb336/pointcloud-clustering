@@ -1,107 +1,129 @@
 #include "includes.h"
-// HAVE A COST FUNCTION RELATIVE TO EACH LENGTH!!!
-bool newtonsimple ( std::vector<float> cost, std::vector<float> &oldcost, Polygon &p, float tolerance = 0.1 )
+
+class BeamCost
 {
-	std::vector<float> dcost;
-	for (int i = 0; i < cost.size(); i++)
-	{
-		dcost.push_back(cost[i] - oldcost[i]);
-		oldcost[i] = cost[i];
-	}
+  public:
+    std::vector<float> cost;
+    std::vector<float> oldcost;
+    Polygon poly;
+    NormalCloud::Ptr ncloud;
+    BeamCost ( Polygon, NormalCloud::Ptr, std::vector<float>);
+};
+  BeamCost::BeamCost ( Polygon beamobject, NormalCloud::Ptr plane_cloud_with_normals, std::vector<float> initcost )
+  { poly = beamobject; ncloud = plane_cloud_with_normals;
+    cost = initcost;
+    for(int i =0;i<2;i++){oldcost.push_back(0);} }
 
-  
-	float dw = p.width - p.oldwidth;
-	p.oldwidth = p.width;
-	p.width = p.width - 0.1*cost[1]*dw/dcost[1];
 
-	float dh = p.height - p.oldheight;
-	p.oldheight = p.height;
-	p.height = p.height - 0.1*cost[2]*dh/dcost[2];
-  
-	float dt = p.thickness - p.oldthickness;
-	p.oldthickness = p.thickness;
-	p.thickness = p.thickness - 0.01*cost[3]*dt/dcost[3];
-	p.calculatePositions();
+// bool newtonsimple ( std::vector<float> cost, std::vector<float> &oldcost, Polygon &p, float multiplier, float tolerance = 0.1 )
+// bool newtonsimple ( float cost, float &oldcost, Polygon &p, float tolerance = 0.1 )
+  bool newtonsimple ( BeamCost &beam, float multiplier, float tolerance=0.1 )
+{
 
-	float del = sqrt ( dw*dw ); //+ dh*dh ); // + dt*dt);
+
+  float dcost1 (beam.cost[0] - beam.oldcost[0]);
+  float dcost2 (beam.cost[1] - beam.oldcost[1]);
+
+
+  float dw = beam.poly.width - beam.poly.oldwidth;
+   beam.poly.oldwidth = beam.poly.width;
+   beam.poly.width = beam.poly.width - multiplier*beam.cost[0]*dw/dcost1;
+
+
+  float dh = beam.poly.height - beam.poly.oldheight;
+  beam.poly.oldheight = beam.poly.height;
+  beam.poly.height = beam.poly.height - multiplier*beam.cost[1]*dh/dcost2;
+
+
+  beam.poly.maxtest();
+	beam.poly.calculatePositions();
+
+	float del = sqrt ( dh*dh +dw*dw );
+  std::cout << del <<std::endl;
 	return ( del < tolerance ); 
 	
 }
 
-void modcost( std::vector<float> &cost, Polygon &simple, pointCloud cloud, pointCloud &projected)
+// void modcost( std::vector<float> &cost, Polygon &simple, pointCloud full_cloud, pointCloud &projected)
+// void modcost( float &cost, Polygon &simple, pointCloud full_cloud, pointCloud &projected)
+void modcost ( BeamCost &beam, pointCloud &projected)
 {
-	for (int i = 0; i< cost.size(); i++)
-		cost[i] = 0;
-	for (int i = 0; i < cloud.size(); i++)
-	projectToPolygon ( cost, simple, cloud[i], projected[i]);
+  // std::vector<float> costy;
+  // Polygon z = beam.poly;
+  // NormalCloud x = beam.ncloud;
+  // for (int i=0; i<2;i++){costy.push_back(i);}
+  beam.cost[0] = 0; beam.cost[1] = 0;
+	for (int i = 0; i < beam.ncloud->size(); i++)
+  {
+       projectToPolygon ( beam.cost, beam.poly, beam.ncloud->points[i], projected.points[i]);
+  }
 }
 int main ( )
 {
+
+  ///////////// Read in Parameters
   std::vector<std::string> parameters = readparameters ( "../parameters.txt" );
 
   std::string fullfile    	=   parameters[0];
   // float radius 			  	=	stof ( parameters[1] );
-  float tolerance			=	stof ( parameters[1] );
-  float cost_tol = stof ( parameters[2] );
-  float dif_tol = stof ( parameters[3] );
-  int 	minclust 			= 	1;
-  pointCloud::Ptr cloud 	= 	loadcloud ( fullfile );
+  float planar_tolerance			=	stof ( parameters[1] );
+  float cost_tol              = stof ( parameters[2] );
+  float dif_tol               = stof ( parameters[3] );
+  float multi                 = stof ( parameters[4] );
+  float radius                = stof ( parameters[5] );
+  int 	minclust 			        = 	1;
+  pointCloud::Ptr full_cloud 	    = 	loadcloud ( fullfile );
+
+//////////// Create beam object ///////////
+	 Polygon poly (5, 3, 1, Eigen::Vector3f (-15.24, 0, 5.762) );
+   poly.makeCloud();
 
 
-	 Polygon poly (5, 3, 1, Eigen::Vector3f (0,0,0) );
-	 poly.makeCloud();
-	 pointCloud::Ptr vv ( new pointCloud);
-	 *vv+=poly.vertices;
-
-	 visualize(vv);
-	 for (int i = 0; i < poly.lines.size(); i++)
-	 {
-	 	std::cout << "begin: "
-	 	<< poly.lines[i].begin[0] << " " << poly.lines[i].begin[1] << " " << poly.lines[i].begin[2] << "\nend: "
-	 	<< poly.lines[i].end[0] << " " << poly.lines[i].end[1] << " " << poly.lines[i].end[2] << "\nvector: "
-	 	<< poly.lines[i].line[0] << " " << poly.lines[i].line[1] << " " << poly.lines[i].line[2] << " \nnorm: "
-	 	<< poly.lines[i].norm << std::endl;
- 	 }
-
+  ////////////// Determine Plane coefficinets for polygon //////////////////
  	pcl::ModelCoefficients::Ptr plane ( new pcl::ModelCoefficients );
  	pointsToPlane( poly.lines[0].begin, poly.lines[1].begin, poly.lines[2].begin, plane );
-  std::cout
-  << "plane values: " << plane->values[0] << " " << plane->values[1] << " " << plane->values[2] << " " << plane->values[3]
-    << std::endl;
+ 
 
-    pointCloud::Ptr testcloud ( new pointCloud );
-    
-    pointsnearplane ( poly, *cloud, *testcloud );
-	pointCloud::Ptr projectedcloud ( new pointCloud );
-	*projectedcloud += *testcloud;
-	
-    
-    std::vector<float> oldcost;
-	for ( int i = 0; i < 3; i ++)
-		oldcost.push_back(5);
-	std::vector<float> cost = oldcost;
+  //////////////// Calculate Normals ///////////
+  NormalCloud::Ptr full_cloud_with_normals ( new NormalCloud );
+  Normals::Ptr just_the_normals ( new Normals );
+  computenormals(full_cloud, *just_the_normals, *full_cloud_with_normals, radius);
+  std::cout << "number of normals: " << just_the_normals->size() << std::endl;
+  visualize ( full_cloud, just_the_normals );
 
 
+  ///////// Find Points within tolerance of plane ///////////////////s
+  NormalCloud::Ptr plane_cloud_with_normals ( new NormalCloud );
+  pointsnearplane ( poly, *full_cloud_with_normals, *plane_cloud_with_normals );
+  std::cout << plane_cloud_with_normals->size() << " " << full_cloud->size() << std::endl;
+
+  /////////////// Build beam cost object /////////////
+  std::vector<float> initial_cost;
+  for(int i=0;i<2;i++){initial_cost.push_back(5);}
+  BeamCost lbeam ( poly, plane_cloud_with_normals, initial_cost);
+  
+  pointCloud::Ptr projectedcloud ( new pointCloud) , testcloud ( new pointCloud );
+  pcl::copyPointCloud ( *plane_cloud_with_normals, *projectedcloud );
+  pcl::copyPointCloud ( *projectedcloud, *testcloud );
+
+  ////////////// Initialize cost function ////////////////////
     bool dif = true;
     bool max = true;
 
-    pointCloud::Ptr vertexcloud ( new pointCloud);
     std::vector<pointCloud::Ptr> clouds;
+
     while ( dif && max)
     {
-
-    	modcost ( cost, poly, *testcloud, *projectedcloud );
-    	poly.makeCloud();
-    	vertexcloud->points.clear();
-    	*vertexcloud+=poly.vertices;
-    	std::cout << "\n\n\n\n\ncost: " << cost[0] << " " << cost[1] << " " << cost[2] << " width: " << poly.width << " height: " << poly.height << " thickness: " << poly.thickness << "\n\n\n\n\n" <<std::endl;
+    	modcost ( lbeam, *projectedcloud );
+    	lbeam.poly.makeCloud();
+    	std::cout << "\ncost: " << lbeam.cost[0] << " " << lbeam.cost[1] << " width: " << lbeam.poly.width << " height: " << lbeam.poly.height << " thickness: " << poly.thickness << "\n\n" <<std::endl;
     	clouds.clear();
     	clouds.push_back(testcloud);
-    	clouds.push_back (vertexcloud);
-    	visualize(clouds);
-    	dif = !newtonsimple( cost, oldcost, poly, dif_tol );
-		
-    	max = sqrt ( cost[0]*cost[0] + cost[1]*cost[1] + cost[2]*cost[2] ) > cost_tol;
+    	clouds.push_back (projectedcloud);
+    	visualize(clouds );
+		  dif = !newtonsimple ( lbeam, multi, dif_tol );
+    	max = sqrt ( lbeam.cost[0]*lbeam.cost[0] + lbeam.cost[1]*lbeam.cost[1]) > cost_tol;
+      // max = cost > cost_tol;
     	
 
     }
