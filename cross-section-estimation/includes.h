@@ -351,6 +351,7 @@ void projectToPolygon ( float &cost, Polygon &poly, PointT &oldp, PointT &newp )
   Eigen::Vector3f projection;
   Eigen::Vector3f old_vector = oldp.getArray3fMap();
   for ( int i =0; i < poly.lines.size(); i++ )
+  // for ( int i =2; i <=4; i+=2 )
   {
 
 
@@ -359,7 +360,7 @@ void projectToPolygon ( float &cost, Polygon &poly, PointT &oldp, PointT &newp )
     projection = dotproduct * poly.lines[i].line / poly.lines[i].norm;
     Eigen::Vector3f bdist = poly.lines[i].end - projection;
 
-    
+    /*
     if ( projection.norm() + bdist.norm() - poly.lines[i].norm <= 0.01 && dotproduct > 0)
     {
       projection = projection + poly.lines[i].begin;
@@ -372,12 +373,13 @@ void projectToPolygon ( float &cost, Polygon &poly, PointT &oldp, PointT &newp )
     {
       projection = poly.lines[i].end;
     }
-    
-    // projection += poly.lines[i].begin;
+    */
+
+    projection += poly.lines[i].begin;
 
     Eigen::Vector3f distance_vector = old_vector - projection;
     float newdist = distance_vector.norm();
-
+    cost+=newdist;
     if (newdist < distance )
     { 
 
@@ -391,7 +393,8 @@ void projectToPolygon ( float &cost, Polygon &poly, PointT &oldp, PointT &newp )
     }
   }
 
-  cost+=distance;
+  // cost+=distance;
+  cost = cost ;
 }
 
 void pointsnearplane ( Polygon poly, pointCloud &cloud, pointCloud &newcloud, float tolerance = 0.02 )

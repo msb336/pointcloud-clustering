@@ -1,4 +1,4 @@
 File name: noisyplane.xyz
 plane tolerance: 0.1
-cost tolerance: 30
-diff tolerance: 1
+cost tolerance: 1
+diff tolerance: 0.00001

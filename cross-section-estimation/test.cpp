@@ -4,19 +4,21 @@ bool newtonsimple ( float cost, float &oldcost, Polygon &p, float tolerance = 0.
 {
 	float dcost = cost - oldcost;
 	oldcost = cost;
+  
 	float dw = p.width - p.oldwidth;
 	p.oldwidth = p.width;
-	p.width = p.width - cost*dw/dcost;
+	p.width = p.width - 0.01*cost*dw/dcost;
 
 	float dh = p.height - p.oldheight;
 	p.oldheight = p.height;
-	p.height = p.height - cost*dh/dcost;
-
+	p.height = p.height - 0.01*cost*dh/dcost;
+  
 	float dt = p.thickness - p.oldthickness;
 	p.oldthickness = p.thickness;
-	p.thickness = p.thickness - 0.25*cost*dt/dcost;
+	p.thickness = p.thickness - 0.01*cost*dt/dcost;
 	p.calculatePositions();
-	float del = sqrt ( dt*dt + dw*dw + dh*dh );
+
+	float del = sqrt ( dt*dt ); //+ dw*dw + dh*dh );
 	return ( del < tolerance ); 
 	
 }
@@ -80,9 +82,9 @@ int main ( )
     	poly.makeCloud();
     	vertexcloud->points.clear();
     	*vertexcloud+=poly.vertices;
-    	std::cout << "cost: " << cost << " width: " << poly.width << " height: " << poly.height << std::endl;
+    	std::cout << "cost: " << cost << " width: " << poly.width << " height: " << poly.height << " thickness: " << poly.thickness << std::endl;
     	clouds.clear();
-    	clouds.push_back(projectedcloud);
+    	clouds.push_back(testcloud);
     	clouds.push_back (vertexcloud);
     	visualize(clouds);
     	dif = !newtonsimple( cost, oldcost, poly, dif_tol );
