@@ -1,5 +1,5 @@
-#include "../segmentation/includes.h"
 
+#include "../segmentation/includes.h"
 typedef pcl::PointCloud<pcl::Normal> Normals;
 typedef pcl::PointCloud<pcl::PointNormal> NormalCloud;
 typedef pcl::PointXYZ PointT;
@@ -77,29 +77,30 @@ class Polygon
 
     std::vector<Eigen::Vector3f> polyObject;
     polyObject.push_back ( placement );
-    polyObject.push_back ( fulltrans*(placement + Eigen::Vector3f( width, 0,0 ) ) );
-    polyObject.push_back ( fulltrans*(placement + Eigen::Vector3f( width, 0, thickness * sign(height) ) ) );
-    polyObject.push_back ( fulltrans*(placement + Eigen::Vector3f( thickness*sign(width), 0, thickness*sign(height) ) ) );
-    polyObject.push_back ( fulltrans*(placement + Eigen::Vector3f( thickness*sign(width), 0, height ) ) );
+    polyObject.push_back ( fulltrans*(placement + Eigen::Vector3f( 0,width,0 ) ) );
+    polyObject.push_back ( fulltrans*(placement + Eigen::Vector3f( 0, width, thickness * sign(height) ) ) );
+    polyObject.push_back ( fulltrans*(placement + Eigen::Vector3f( 0, thickness*sign(width),  thickness*sign(height) ) ) );
+    polyObject.push_back ( fulltrans*(placement + Eigen::Vector3f( 0, thickness*sign(width), height ) ) );
     polyObject.push_back ( fulltrans*(placement + Eigen::Vector3f( 0, 0, height ) ) );
     // std::cout << "New Cross Section co-ordinates: \n";
     lines.clear();
     normals.clear();
     for (int i = 0; i < polyObject.size(); i++)
     {
-      // std::cout << "( " << polyObject[i][0] << " " << polyObject[i][1] << " " << polyObject[i][2] << " )\n";
       linesegment l;
       l.line  = polyObject[(i+1) % polyObject.size() ] - polyObject[i];
-      Eigen::Vector3f cross = l.line.cross(Eigen::Vector3f(0,-1,0));
+      Eigen::Vector3f cross = l.line.cross(Eigen::Vector3f(-1,0,0));
       normals.push_back( cross / cross.norm() );
-      // std::cout << normals[i] << std::endl;
+      // std::cout << "( " << l.line[0] << " " << l.line[1] << " " << l.line[2] << " )"
+      // <<"Built by " << i << " and " << (i+1) % polyObject.size() << " has normal: (" 
+      // << normals[i][0] << " " << normals[i][1] << " " << normals[i][2] << ")" << std::endl;
+
 
       l.begin = polyObject[i];
       l.end   = polyObject[i+1];
       l.norm  = l.line.norm();
       lines.push_back(l);
     }
-    // std::cout<<std::endl;
   }
   void Polygon::set (float h1, float w, float t, Eigen::Vector3f init, float th = 0, float ph =0 )
   {
@@ -214,19 +215,23 @@ void pointsnearplane ( Polygon poly, CloudType &cloud, CloudType &newcloud, floa
   std::vector<int> index;
   pcl::ModelCoefficients::Ptr plane ( new pcl::ModelCoefficients);
   pointsToPlane( poly.lines[3].begin, poly.lines[4].begin, poly.lines[5].begin, plane );
-
+    
   for ( int i =0; i < cloud.points.size(); i++ )
   {
     float dist = 
       plane->values[0] * cloud.points[i].x + plane->values[1] * cloud.points[i].y + 
       plane->values[2] * cloud.points[i].z - plane->values[3];
-
+      /*
+      std::cout << "Point: (" << cloud.points[i].x << " " << cloud.points[i].y << " " <<cloud.points[i].z << " ) "
+      << "is " << dist << " away from plane." << std::endl; */
 
     if ( abs(dist) < tolerance )
     {  newcloud.points.push_back(cloud.points[i]); }
   }
-}
 
+  std::cout << "Plane Coefficients: " 
+  << plane->values[0] << " " << plane->values[1] << " " << plane->values[2] << " " << plane->values[3] << std::endl;
+}
 
 
 ///////////////////////////////// Projecting Points to Polygon /////////////////////////////////////////////
@@ -253,6 +258,18 @@ Eigen::Vector3f fitProjection (Eigen::Vector3f v, linesegment l, Eigen::Vector3f
     }
 
 }
+float crossnorm ( Eigen::Vector3f a, Eigen::Vector3f b)
+{
+  float x = a[1]*b[2] - b[1]*a[2];
+  float y = -(a[0]*b[2] - b[0]*a[2]);
+  float z = a[0]*b[1] - b[0]*a[1];
+
+  return sqrt ( x*x +y*y + z*z );
+}
+float dotprod ( Eigen::Vector3f a, Eigen::Vector3f b )
+{
+
+}
 void projectToPolygon ( std::vector<float> &cost, Polygon poly, PointN oldp, PointT &newp )
 {
   float distance = 10000;
@@ -260,24 +277,33 @@ void projectToPolygon ( std::vector<float> &cost, Polygon poly, PointN oldp, Poi
   Eigen::Vector3f old_vector( oldp.x, oldp.y, oldp.z );
   Eigen::Vector3f normal_vec ( oldp.normal_x, oldp.normal_y, oldp.normal_z );
   Eigen::Vector3f dv ( 0,0,0 );
-  Eigen::Vector3f cross;
+  Eigen::Vector3f dot;
   Eigen::Vector3f distance_vector (0,0,0);
-
+  Eigen::Vector3f norm;
 
   for ( int i =0; i < poly.lines.size(); i++ )
   {
-    cross = poly.normals[i].cross ( normal_vec / normal_vec.norm() );
-    std::cout << "cross product:" << "\n" << cross << "\n\n" << std::endl;
+    Eigen::Vector3f unit_normal_vec = normal_vec / normal_vec.norm();
+    // cross = poly.normals[i].cross ( unit_normal_vec );
+    norm = poly.normals[i] - unit_normal_vec;
 
-    if (  cross.norm() < 0.1 || std::isnan(cross[0]))
+    // std::cout << "cross product of ( " << poly.normals[i][0] << " " << poly.normals[i][1] << " " << poly.normals[i][2] << ") and ( "
+    //   << unit_normal_vec[0] << " " << unit_normal_vec[1] << " " << unit_normal_vec[2] << ") is:\n"
+    //  << "\n" << cross << "\n" << "norm: " << norm.norm() << "\n" << std::endl;
+
+    float dot = unit_normal_vec.dot( poly.normals[i] );
+    if ( dot > 0.5 ) //( cn < 0.5 )
     {
       fitProjection(old_vector, poly.lines[i], projection );
       distance_vector = old_vector - projection;
+      distance_vector[0] = 0;
       float newdist = distance_vector.norm();
       if (newdist < distance )
       { 
+
+
           newp.x = projection[0]; newp.y = projection[1]; newp.z = projection[2];
-          distance = newdist; 
+          distance = newdist;
           dv = distance_vector;
           if ( distance < 0.001 )
           {
@@ -285,8 +311,30 @@ void projectToPolygon ( std::vector<float> &cost, Polygon poly, PointN oldp, Poi
           }
       }
     }
-    cost[0] += dv[0]; cost[1] += dv[2];
-  } 
+    /*
+    else
+    {
+      std::cout << "cross product of ( " << poly.normals[i][0] << " " << poly.normals[i][1] << " " << poly.normals[i][2] << ") and ( "
+       << unit_normal_vec[0] << " " << unit_normal_vec[1] << " " << unit_normal_vec[2] << ") was " << cn << std::endl;
+    }
+    */
+  }
+
+  cost[0] += dv[1]; cost[1] += dv[2];
+  // std::cout << "( " << old_vector[0] << " " << old_vector[1] << " " << old_vector[2] << ") cast to ( "
+  // << newp.x << " " << newp.y << " " << newp.z << ") distance: << : " << distance_vector[1] << " " << distance_vector[2] << "\n"
+  // << "norm: " << norm.norm() << " cost: " <<  cost[0] << " " << cost[1] << "\n" << std::endl;
+
+  /*
+  if (dv.norm() == 0)
+  {
+     std::cout << " Point \n( " 
+      << old_vector[0] << " " 
+      << old_vector[1] << " " 
+      << old_vector[2] << ") with normal couldn't find a home." << std::endl;
+  }
+  */
+  
 }
 
 

@@ -1,6 +1,7 @@
-File name: ../../data/simulated/fake-beam-scans/segmented-0noise/0.xyz
-plane tolerance: 0.1
+File name: ../../data/simulated/heftybeam.xyz
+plane tolerance: 0.01
 cost tolerance: 0.001
 diff tolerance: 0.00001
 multiplier: 0.5
 radius: 0.5
+max_iterations: 50
