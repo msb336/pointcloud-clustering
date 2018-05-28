@@ -1,5 +1,6 @@
 
 #include "../segmentation/includes.h"
+#include <pcl/surface/mls.h>
 typedef pcl::PointCloud<pcl::Normal> Normals;
 typedef pcl::PointCloud<pcl::PointNormal> NormalCloud;
 typedef pcl::PointXYZ PointT;
@@ -57,7 +58,7 @@ class Polygon
     float height=0;
     float width=0;
     std::vector<linesegment> lines;
-    pointCloud::Ptr vertices;
+    PointCloud::Ptr vertices;
     std::vector<Eigen::Vector3f> normals;
 
     Polygon ( float, float, float,  Eigen::Vector3f, float, float );
@@ -123,14 +124,14 @@ class Polygon
   }
   void Polygon::maxtest ()
   {
-    if (abs(thickness) > 100){thickness=100*sign(thickness);}
-    else if (abs(thickness) < 0.25){thickness=0.25;}
+    if (fabs(thickness) > 100){thickness=100*sign(thickness);}
+    else if (fabs(thickness) < 0.25){thickness=0.25;}
 
-    if (abs(height) > 100){height=100*sign(height);}
-    else if (abs(height) < 0.25){height=0.25;}
+    if (fabs(height) > 100){height=100*sign(height);}
+    else if (fabs(height) < 0.25){height=0.25;}
 
-    if (abs(width) > 100){width=100*sign(width);}
-    else if (abs(width) < 0.25){width=0.25;}
+    if (fabs(width) > 100){width=100*sign(width);}
+    else if (fabs(width) < 0.25){width=0.25;}
   }
   float Polygon::rewrite ( float cost, float oldcost)
   {
@@ -169,7 +170,7 @@ class Polygon
   }
   void Polygon::makeCloud()
   {
-    pointCloud::Ptr temp ( new pointCloud );
+    PointCloud::Ptr temp ( new PointCloud );
     // std::cout << "writing points" << std::endl;
     for (int i = 0; i < lines.size(); i++)
     {
@@ -188,6 +189,47 @@ class Polygon
     }
     // std::cout << "done. " <<std::endl;
     vertices = temp; 
+  }
+
+  //////////////////////////I/O/////////////////
+
+  void load_normals ( std::string normalfile, Normals point_normals )
+  {
+    ifstream normals (normalfile);
+
+    std::vector<std::string> values ;
+    std::vector<pcl::Normal> set_of_normals;
+    char y;
+    std::string i;
+    while (normals >> y) 
+    {
+      if ( y == ' ' || y == ',' || y == '\t' )
+        normals  >> y ;
+      i += y ;
+      if ( normals.peek () == ' ' || normals.peek () == ',' )
+      {
+        values.push_back(i);
+        i = "";
+      }
+
+      if ( normals.peek () == '\n' )
+      {
+        values.push_back(i);
+        pcl::Normal point;
+        point.normal_x = stof(values[0]);
+        point.normal_y = stof(values[1]);
+        point.normal_z = stof(values[2]);
+        set_of_normals.push_back ( point );
+        values.clear () ;
+        i = "";
+      }
+    }
+    point_normals.width    = set_of_normals.size();
+  point_normals.height   = 1;
+  point_normals.is_dense = false;
+  point_normals.points.resize (point_normals.width * point_normals.height);
+    for (int i =0; i < set_of_normals.size(); i++)
+      { point_normals.points[i] = set_of_normals[i]; }
   }
 
 
@@ -220,12 +262,15 @@ void pointsnearplane ( Polygon poly, CloudType &cloud, CloudType &newcloud, floa
   {
     float dist = 
       plane->values[0] * cloud.points[i].x + plane->values[1] * cloud.points[i].y + 
-      plane->values[2] * cloud.points[i].z - plane->values[3];
+      plane->values[2] * cloud.points[i].z + plane->values[3];
       /*
-      std::cout << "Point: (" << cloud.points[i].x << " " << cloud.points[i].y << " " <<cloud.points[i].z << " ) "
-      << "is " << dist << " away from plane." << std::endl; */
+      if ( cloud.points[i].x < 3)
+      {
+      std::cout << "Point: (" << cloud.points[i].x << " is " << fabs(dist) 
+        << " away from plane. Tolerance: " << tolerance << std::endl;}
+        */
 
-    if ( abs(dist) < tolerance )
+    if ( fabs(dist) < tolerance )
     {  newcloud.points.push_back(cloud.points[i]); }
   }
 
@@ -287,21 +332,23 @@ void projectToPolygon ( std::vector<float> &cost, Polygon poly, PointN oldp, Poi
     // cross = poly.normals[i].cross ( unit_normal_vec );
     norm = poly.normals[i] - unit_normal_vec;
 
-    // std::cout << "cross product of ( " << poly.normals[i][0] << " " << poly.normals[i][1] << " " << poly.normals[i][2] << ") and ( "
-    //   << unit_normal_vec[0] << " " << unit_normal_vec[1] << " " << unit_normal_vec[2] << ") is:\n"
-    //  << "\n" << cross << "\n" << "norm: " << norm.norm() << "\n" << std::endl;
+
 
     float dot = unit_normal_vec.dot( poly.normals[i] );
-    if ( dot > 0.5 ) //( cn < 0.5 )
+    // if ( fabs(dot) > 0.5 ) 
+    if ( dot > 0.5 )
     {
+      /*
+      std::cout << "dot product of ( " << poly.normals[i][0] << " " << poly.normals[i][1] << " " << poly.normals[i][2] << ") and ( "
+        << unit_normal_vec[0] << " " << unit_normal_vec[1] << " " << unit_normal_vec[2] << ") is: "
+       <<  dot << "\n" << std::endl;
+       */
       fitProjection(old_vector, poly.lines[i], projection );
       distance_vector = old_vector - projection;
       distance_vector[0] = 0;
       float newdist = distance_vector.norm();
       if (newdist < distance )
       { 
-
-
           newp.x = projection[0]; newp.y = projection[1]; newp.z = projection[2];
           distance = newdist;
           dv = distance_vector;
@@ -311,13 +358,7 @@ void projectToPolygon ( std::vector<float> &cost, Polygon poly, PointN oldp, Poi
           }
       }
     }
-    /*
-    else
-    {
-      std::cout << "cross product of ( " << poly.normals[i][0] << " " << poly.normals[i][1] << " " << poly.normals[i][2] << ") and ( "
-       << unit_normal_vec[0] << " " << unit_normal_vec[1] << " " << unit_normal_vec[2] << ") was " << cn << std::endl;
-    }
-    */
+
   }
 
   cost[0] += dv[1]; cost[1] += dv[2];
@@ -340,7 +381,7 @@ void projectToPolygon ( std::vector<float> &cost, Polygon poly, PointN oldp, Poi
 
 ///////////// Normal calculations //////////////////
 
-void computenormals ( pointCloud::Ptr cloud, Normals &cloud_normals, NormalCloud &normalcloud, float rad=0.3 )
+void computenormals ( PointCloud::Ptr cloud, Normals &cloud_normals, NormalCloud &normalcloud, float rad=0.3 )
 {
   pcl::NormalEstimation<PointT, pcl::Normal> normal_estimate;
   normal_estimate.setInputCloud ( cloud );
@@ -360,7 +401,7 @@ void computenormals ( pointCloud::Ptr cloud, Normals &cloud_normals, NormalCloud
 
 
 ////////////// Visualize cloud normals //////////////////////
-void visualize ( std::vector<pointCloud::Ptr> cloudset )
+void visualize ( std::vector<PointCloud::Ptr> cloudset )
 {
     boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
     viewer->setBackgroundColor (0, 0, 0);
@@ -381,7 +422,7 @@ void visualize ( std::vector<pointCloud::Ptr> cloudset )
     }
 }
 
-void visualize ( pointCloud::Ptr cloud , Normals::Ptr normals)
+void visualize ( PointCloud::Ptr cloud , Normals::Ptr normals)
 {
 
     boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
@@ -413,3 +454,37 @@ void visualize ( NormalCloud::Ptr cloud)
       boost::this_thread::sleep (boost::posix_time::microseconds (100000));
     }
 }
+
+
+void mlsnormals(PointCloud::Ptr &cloud, Normals &just_normals, NormalCloud::Ptr &cloud_with_normals, float searchRadius=0.03 )
+{
+  pcl::search::KdTree<PointT>::Ptr tree ( new pcl::search::KdTree<PointT> );
+  pcl::MovingLeastSquares<PointT, PointN> mls;
+
+  mls.setComputeNormals ( true );
+  mls.setInputCloud ( cloud );
+  mls.setPolynomialOrder ( 3 );
+  mls.setSearchMethod ( tree );
+  mls.setSearchRadius (searchRadius );
+  mls.process ( *cloud_with_normals);
+
+  just_normals.width    = cloud_with_normals->width;
+  just_normals.height   = cloud_with_normals->height;
+  just_normals.is_dense = cloud_with_normals->is_dense;
+  just_normals.points.resize (just_normals.width * just_normals.height);
+
+  for (int i = 0; i < cloud_with_normals->points.size(); i++ )
+  { 
+    float nx = cloud_with_normals->points[i].normal_x;
+    float ny = cloud_with_normals->points[i].normal_y;
+    float nz = cloud_with_normals->points[i].normal_z;
+    float norm = sqrt( nx*nx + ny*ny + nz*nz );
+
+    just_normals.points[i].normal_x = nx / norm;
+    just_normals.points[i].normal_y = ny / norm;
+    just_normals.points[i].normal_z = nz / norm;
+
+
+  }
+}
+

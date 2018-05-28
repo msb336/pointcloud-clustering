@@ -22,7 +22,7 @@ int main (  )
     std::string savefile = parameters[9];
 
     std::cout << "Loading cloud" << std::endl;
-    pointCloud::Ptr cloud = loadcloud ( filename );
+    PointCloud::Ptr cloud = loadcloud ( filename );
     std::cout << "Loaded cloud with : " << cloud->points.size() << " points" << std::endl;
     
 

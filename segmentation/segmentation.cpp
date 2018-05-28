@@ -39,6 +39,10 @@ int main ( int argc, char** argv )
 
   if ( vis == true)
     visualize ( cloud, true ) ;
+
+  std::vector<pointCloud::Ptr> cloudy;
+  cloudy.push_back ( cloud );
+  writetoXYZ ( "../", cloudy );
     
 
 

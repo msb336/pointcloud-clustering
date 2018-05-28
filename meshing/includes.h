@@ -16,6 +16,7 @@
 #include <CGAL/Timer.h>
 #include <CGAL/Polyhedron_3.h>
 
+#include <CGAL/Polygon_mesh_processing/compute_normal.h>
 #include <CGAL/Polygon_mesh_processing/triangulate_hole.h>
 #include <CGAL/Polygon_mesh_processing/refine.h>
 #include <CGAL/Polygon_mesh_processing/fair.h>
@@ -27,10 +28,14 @@
 #include <CGAL/Polyhedral_mesh_domain_3.h>
 #include <CGAL/make_mesh_3.h>
 #include <CGAL/refine_mesh_3.h>
+
+#include <CGAL/Surface_mesh.h>
+
 #define CGAL_MESH_3_VERBOSE 1
 
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/property_map/property_map.hpp>
 
 namespace fs = ::boost::filesystem;
 
@@ -59,11 +64,12 @@ using namespace CGAL::parameters;
 typedef CGAL::Simple_cartesian<double> K;
 typedef K::Point_3  Point_3;
 typedef CGAL::cpp11::array<std::size_t,3> Facet;
-typedef K::Vector_3 Vector;
-typedef std::pair<Point_3, Vector> Pwn;
+typedef K::Vector_3 Vector_3;
+typedef std::pair<Point_3, Vector_3> Pwn;
 
 typedef CGAL::Scale_space_surface_reconstruction_3<Kernel>    Reconstruction;
 typedef Kernel::Point_3 Point;
+typedef Kernel::Vector_3 Vector;
 typedef Reconstruction::Facet_const_iterator                   Facet_iterator;
 typedef Reconstruction::Point_const_iterator Point_iterator;
 

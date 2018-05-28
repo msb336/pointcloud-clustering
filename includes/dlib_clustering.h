@@ -20,7 +20,7 @@ using namespace dlib;
 
 typedef matrix<double,3,1> pointMatrix;
 
-std::vector<pointMatrix> pclToMatrixVector ( pointCloud::Ptr cloud )
+std::vector<pointMatrix> pclToMatrixVector ( PointCloud::Ptr cloud )
 {
     std::vector<pointMatrix> samples;
     pointMatrix m;

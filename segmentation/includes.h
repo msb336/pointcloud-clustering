@@ -33,7 +33,7 @@
 #define BOOST_FILESYSTEM_NO_DEPRECATED 
 
 
-typedef pcl::PointCloud<pcl::PointXYZ> pointCloud;
+typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 typedef pcl::PointCloud<pcl::PointXYZRGB> colorCloud;
 
 namespace fs = ::boost::filesystem;
@@ -80,9 +80,9 @@ void mkdir ( std::string directory )
 }
 
 
-pointCloud::Ptr loadXYZ ( std::string filename )
+PointCloud::Ptr loadXYZ ( std::string filename )
 {
-  pointCloud::Ptr cloud ( new pointCloud );
+  PointCloud::Ptr cloud ( new PointCloud );
   std::ifstream inFile;
   char x;
   
@@ -144,10 +144,10 @@ pointCloud::Ptr loadXYZ ( std::string filename )
 
 }
 
-pointCloud::Ptr loadcloud(std::string loadfile)
+PointCloud::Ptr loadcloud(std::string loadfile)
 {
     std::string filename = loadfile;
-    pointCloud::Ptr newcloud ( new pointCloud );
+    PointCloud::Ptr newcloud ( new PointCloud );
     
     std::string ex = fs::extension ( filename ) ;
 
@@ -172,7 +172,7 @@ void writetoPCD(std::stringstream ss, colorCloud::Ptr cloud)
   writer.write<pcl::PointXYZRGB> (ss.str (), *cloud, false);
 }
 
-void writetoPCD(std::stringstream ss, pointCloud::Ptr cloud)
+void writetoPCD(std::stringstream ss, PointCloud::Ptr cloud)
 {
   pcl::PCDWriter writer;
   writer.write<pcl::PointXYZ> (ss.str (), *cloud, false);
@@ -267,11 +267,11 @@ void getfilenames(const fs::path& root, const std::string& ext, std::vector<fs::
 
 }
 
-pointCloud::Ptr concatenate(fs::path directory, bool downsample = false)
+PointCloud::Ptr concatenate(fs::path directory, bool downsample = false)
 {
   // Concatenate all pcd files in the specified directory "Directory"
 
-  pointCloud::Ptr concloud (new pointCloud);
+  PointCloud::Ptr concloud (new PointCloud);
   std::vector<fs::path> ret;
   std::string ext = ".pcd";
   // getfilenames(directory, ext, ret);
@@ -280,7 +280,7 @@ pointCloud::Ptr concatenate(fs::path directory, bool downsample = false)
   pcl::PCDWriter writer;
   for (int i = 2; i <=374; i+=2)
   {
-    pointCloud::Ptr newcloud (new pointCloud);
+    PointCloud::Ptr newcloud (new PointCloud);
     std::stringstream readfile;
     readfile << "../../alignedClouds/concatenated" << i << ".pcd";
     reader.read (readfile.str(), *newcloud);
@@ -294,7 +294,7 @@ pointCloud::Ptr concatenate(fs::path directory, bool downsample = false)
   return concloud;
 }
 
-std::vector<colorCloud::Ptr> split(pointCloud::Ptr cloud,  std::vector<pcl::PointIndices> cluster_indices)
+std::vector<colorCloud::Ptr> split(PointCloud::Ptr cloud,  std::vector<pcl::PointIndices> cluster_indices)
 {
   //Segment cloud into individual clusters based on point indices
   std::vector<colorCloud::Ptr> segmented_clouds;
@@ -365,12 +365,12 @@ void visualize (std::vector<colorCloud::Ptr> segmented_clouds)
   }
 }
 
-void visualize ( pointCloud::Ptr cloud , bool height = false, bool normals = false )
+void visualize ( PointCloud::Ptr cloud , bool height = false, bool normals = false )
 {
   if ( height == false )
   {
     boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
-    viewer->setBackgroundColor (0, 0, 0);
+    viewer->setBackgroundColor (255, 255, 255);
     viewer->addPointCloud<pcl::PointXYZ> (cloud, "Single Cloud");
     viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "Single Cloud");
     viewer->addCoordinateSystem (1.0);
@@ -411,7 +411,7 @@ void visualize ( pointCloud::Ptr cloud , bool height = false, bool normals = fal
 }
 
 
-void noisefilter ( pointCloud::Ptr cloud, int k, float std)
+void noisefilter ( PointCloud::Ptr cloud, int k, float std)
 {
   // Create the filtering object
   pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
@@ -433,7 +433,7 @@ void noisefilter ( colorCloud::Ptr cloud, int k, float std )
   std::cout << "Cloud now has: " << cloud->size() << " points\n" ;
 }
  
-void downsample(pointCloud::Ptr cloud, float leafsize)
+void downsample(PointCloud::Ptr cloud, float leafsize)
 {
   // Create the filtering object
   pcl::VoxelGrid<pcl::PointXYZ> vg;
@@ -467,7 +467,7 @@ colorCloud::Ptr projectPlane ( colorCloud::Ptr cloud, pcl::ModelCoefficients::Pt
 
 }
 
-std::vector<colorCloud::Ptr> sacSegmentation ( pointCloud::Ptr cloud,  float distance, int mininum, bool biggest=false )
+std::vector<colorCloud::Ptr> sacSegmentation ( PointCloud::Ptr cloud,  float distance, int mininum, bool biggest=false )
 {
 
   std::vector<pcl::PointIndices> plane_indices;
@@ -536,7 +536,7 @@ std::vector<colorCloud::Ptr> sacSegmentation ( pointCloud::Ptr cloud,  float dis
   return segments;
 }
 
-std::vector<colorCloud::Ptr>  euclideanCluster(pointCloud::Ptr cloud, float tolerance, int minclust, int maxclust)
+std::vector<colorCloud::Ptr>  euclideanCluster(PointCloud::Ptr cloud, float tolerance, int minclust, int maxclust)
 {
   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
   tree->setInputCloud (cloud);

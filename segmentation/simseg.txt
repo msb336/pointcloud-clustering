@@ -19,7 +19,7 @@
   Post-seg std: 0.5
   
   ~Options~
-  Save Segments: true
+  Save Segments: false
   Save Location: ../../data/simulated/fake-beam-scans/segmented-2cmnoise/
   Save filetype: .xyz
   Visualize: true

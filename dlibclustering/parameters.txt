@@ -1,14 +1,14 @@
-File: ../../data/simulated/fake-beam-scans/simulated-beam-0noise.xyz
+File: ../../data/moveHighTest/concatenated/concat1-201step5filtk100std0.8
 
 ~Pre-processing~
-Downsample leafsize: 0.3
+Downsample leafsize: 0.15
 noisefilter k: 15
 noisefilter std: 1
 
 ~Clustering~
 Cluster Option: kmeans
 kernel type (if kmeans): radial
-Number of clusters: 17
+Number of clusters: 5
 
 
 ~Options~
