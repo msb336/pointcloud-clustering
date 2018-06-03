@@ -4,7 +4,7 @@ unsupervised/data/segment.stl
 unsupervised/data/segment2.stl
 data/*/meshed/*
 unsupervised/*
-matlab/*
+
 */build/*
 *.asv
 *.pcd
