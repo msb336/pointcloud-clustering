@@ -1,8 +1,11 @@
-File name: ../../data/simulated/lbeamh10w10t2l50d03.xyz
+File name: ../0noise-normals.xyz
 plane tolerance: 0.3
-cost tolerance: 0.001
-diff tolerance: 0.00001
+cost tolerance: 0.0001
+diff tolerance: 0.0001
 multiplier: 1
-method: mls
-radius: 10
-max_iterations: 50
+max_iterations: 10
+w: 50
+h: 50
+t: 25
+step size: 1
+dot tolerance: 0.8

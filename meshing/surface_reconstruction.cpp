@@ -87,7 +87,6 @@ int main ( )
       poly = scaleSpaceReconstruction ( pp, scale );
     }
     savemesh( poly, "testmesh.off" );
-    savemeshnormals();
     if ( hole_fill == true )
     { 
       saver << "Hole_fill" << densityControl;

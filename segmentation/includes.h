@@ -432,18 +432,20 @@ void noisefilter ( colorCloud::Ptr cloud, int k, float std )
   sor.filter (*cloud);
   std::cout << "Cloud now has: " << cloud->size() << " points\n" ;
 }
- 
-void downsample(PointCloud::Ptr cloud, float leafsize)
+
+// void downsample(PointCloud::Ptr cloud, float leafsize)
+ template < typename PointType >
+void downsample ( boost::shared_ptr<pcl::PointCloud<PointType> > cloud, float leafsize=0.1)
 {
   // Create the filtering object
-  pcl::VoxelGrid<pcl::PointXYZ> vg;
+  pcl::VoxelGrid<PointType> vg;
   vg.setInputCloud (cloud);
   vg.setLeafSize(leafsize, leafsize, leafsize);
   vg.filter (*cloud);
   std::cout << "PointCloud after filtering has: " << cloud->points.size ()  << " data points." << std::endl;
 
 }
-
+/*
 void downsample (colorCloud::Ptr cloud, float leafsize )
 {
     // Create the filtering object
@@ -453,7 +455,7 @@ void downsample (colorCloud::Ptr cloud, float leafsize )
   vg.filter (*cloud);
   std::cout << "PointCloud after filtering has: " << cloud->points.size ()  << " data points." << std::endl;
 }
-
+*/
 
 colorCloud::Ptr projectPlane ( colorCloud::Ptr cloud, pcl::ModelCoefficients::Ptr coefficients )
 {

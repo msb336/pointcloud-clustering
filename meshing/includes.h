@@ -459,14 +459,21 @@ C3t3 highLevelMesh (
                                     no_exude ()
                                   );
     title << "lloyd" << time_limits[0]<<"max_iter"<<mesh_criteria[4];
-
     std::cout<< "........done."<<std::endl;
+
+
+    std::stringstream saver;
+    saver << title.str() << ".off" ;
+    std::ofstream medit_file ( saver.str() );
+    c3t3.output_boundary_to_off ( medit_file );
+
   }
   else
   {
     std::cout << "Generating mesh........." << std::endl;
     c3t3 = CGAL::make_mesh_3<C3t3> ( domain, criteria, time_limit = 10 );
-    std::cout << "               .............done" << std::endl;
+    std::cout << "               .............done" << std::endl;    
+
   }
 
   if ( mesh_parameters[1] )
@@ -475,6 +482,13 @@ C3t3 highLevelMesh (
     CGAL::odt_optimize_mesh_3<C3t3> ( c3t3, domain, time_limit = time_limits[1] );
     title << "odt" << time_limits[1];
     std::cout<< "........done."<<std::endl;
+
+    std::stringstream saver1;
+    saver1 << title.str() << ".off" ;
+    std::ofstream medit_file ( saver1.str() );
+
+    c3t3.output_boundary_to_off ( medit_file );
+
   }
 
   if ( mesh_parameters[2] )
@@ -483,6 +497,14 @@ C3t3 highLevelMesh (
     CGAL::perturb_mesh_3<C3t3> ( c3t3, domain, time_limit = time_limits[2] );
     title << "perturb" << time_limits[2];
     std::cout<< "........done."<<std::endl;
+
+
+    std::stringstream saver2;
+    saver2 << title.str() << ".off" ;
+    std::ofstream medit_file ( saver2.str() );
+
+    c3t3.output_boundary_to_off ( medit_file );
+
   }
 
   if ( mesh_parameters[3] == true )
@@ -491,6 +513,12 @@ C3t3 highLevelMesh (
     CGAL::exude_mesh_3<C3t3> ( c3t3, time_limit = time_limits[3] );
     std::cout << "..............done" << std::endl;
     title<< "exude" << time_limits[3];
+
+    std::stringstream saver3;
+    saver3 << title.str() << ".off" ;
+    std::ofstream medit_file ( saver3.str() );
+
+    c3t3.output_boundary_to_off ( medit_file );
   }
 
 
